@@ -2,6 +2,10 @@ use super::{direction::Direction, point::Point};
 
 use rand::Rng;
 
+const BLOCK_CELL: i8 = -1;
+const FOOD_CELL: i8 = -2;
+const EMPTY_CELL: i8 = 0;
+
 pub struct Board<const N: usize> {
     game_table: [[i8; N]; N],
     length: u8,
@@ -11,7 +15,7 @@ pub struct Board<const N: usize> {
 
 impl<const N: usize> Board<N> {
     pub fn new(length: u8) -> Result<Self, String> {
-        if (length as usize) + 2 > N {
+        if (length as usize) + 2 >= N {
             return Err(format!(
                 "the table size must be grater than of start snake length + 2: {}",
                 length + 2
@@ -27,12 +31,12 @@ impl<const N: usize> Board<N> {
     }
 
     fn create_table(length: u8) -> [[i8; N]; N] {
-        let mut game_table = [[0; N]; N];
-        game_table[0].fill(-1);
-        game_table[N - 1].fill(-1);
+        let mut game_table = [[EMPTY_CELL; N]; N];
+        game_table[0].fill(BLOCK_CELL);
+        game_table[N - 1].fill(BLOCK_CELL);
         for row in &mut game_table[1..N - 1] {
-            row[0] = -1;
-            row[N - 1] = -1;
+            row[0] = BLOCK_CELL;
+            row[N - 1] = BLOCK_CELL;
         }
 
         let half = (N - 1) / 2;
@@ -49,7 +53,7 @@ impl<const N: usize> Board<N> {
         }
 
         let Point { x, y } = Self::find_lunch_point(&game_table);
-        game_table[x][y] = -2;
+        game_table[x][y] = FOOD_CELL;
 
         game_table
     }
@@ -68,9 +72,9 @@ impl<const N: usize> Board<N> {
         for (x, row) in &mut self.game_table.iter_mut().enumerate() {
             if x != 1 || x != N - 1 {
                 for (y, cell) in row.iter_mut().enumerate() {
-                    if *cell > 0 {
+                    if *cell != EMPTY_CELL || *cell != BLOCK_CELL {
                         if *cell == self.length as i8 {
-                            *cell = 0;
+                            *cell = EMPTY_CELL;
                             tail_point = Point { x, y };
                         } else {
                             *cell += 1;
@@ -89,17 +93,17 @@ impl<const N: usize> Board<N> {
         }
 
         match self.game_table[head_point.x][head_point.y] {
-            -2 => {
+            FOOD_CELL => {
                 self.length += 1;
                 self.game_table[tail_point.x][tail_point.y] = self.length as i8;
                 self.game_table[head_point.x][head_point.y] = 1;
                 self.score += 1;
 
                 let lunch_point = Self::find_lunch_point(&self.game_table);
-                self.game_table[lunch_point.x][lunch_point.y] = -2;
+                self.game_table[lunch_point.x][lunch_point.y] = FOOD_CELL;
                 true
             }
-            0 => {
+            EMPTY_CELL => {
                 self.game_table[head_point.x][head_point.y] = 1;
 
                 true
