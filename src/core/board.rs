@@ -132,3 +132,83 @@ impl<const N: usize> Board<N> {
         }
     }
 }
+
+#[cfg(test)]
+mod test_board {
+    mod test_board_helper {
+        use super::super::{BLOCK_CELL, FOOD_CELL};
+
+        fn is_block_row(row: &[i8]) -> bool {
+            row.iter().all(|&cell| cell == BLOCK_CELL)
+        }
+
+        pub fn check_food_count<const N: usize>(table: &[[i8; N]; N]) {
+            let food_count = table
+                .iter()
+                .flat_map(|row| row.iter())
+                .filter(|&&cell| cell == FOOD_CELL)
+                .count();
+            assert_eq!(food_count, 1, "the number of food is not correct")
+        }
+
+        pub fn check_wall<const N: usize>(table: &[[i8; N]; N]) {
+            assert!(is_block_row(&table[0]));
+            assert!(is_block_row(&table[N - 1]));
+
+            for row in &table[1..N - 1] {
+                assert_eq!(row[0], BLOCK_CELL);
+                assert_eq!(row[N - 1], BLOCK_CELL);
+            }
+        }
+    }
+
+    use super::Board;
+
+    #[test]
+    fn check_create_size() {
+        assert!(Board::<4>::new(3).is_err());
+        assert!(Board::<5>::new(3).is_err());
+        assert!(Board::<6>::new(3).is_ok());
+
+        assert!(Board::<5>::new(4).is_err());
+        assert!(Board::<6>::new(4).is_err());
+        assert!(Board::<7>::new(4).is_ok());
+    }
+
+    #[test]
+    fn check_create_table() {
+        let odd_n_odd_len = Board::<7>::create_table(3);
+        test_board_helper::check_wall::<7>(&odd_n_odd_len);
+        test_board_helper::check_food_count::<7>(&odd_n_odd_len);
+        let center = odd_n_odd_len[3];
+        assert_eq!(center[4], 1);
+        assert_eq!(center[3], 2);
+        assert_eq!(center[2], 3);
+
+        let even_n_odd_len = Board::<8>::create_table(3);
+        test_board_helper::check_wall::<8>(&even_n_odd_len);
+        test_board_helper::check_food_count::<8>(&even_n_odd_len);
+        let center = even_n_odd_len[3];
+        assert_eq!(center[4], 1);
+        assert_eq!(center[3], 2);
+        assert_eq!(center[2], 3);
+
+        let odd_n_even_len = Board::<7>::create_table(4);
+        test_board_helper::check_wall::<7>(&odd_n_even_len);
+        test_board_helper::check_food_count::<7>(&odd_n_even_len);
+        let center = odd_n_even_len[3];
+        assert_eq!(center[4], 1);
+        assert_eq!(center[3], 2);
+        assert_eq!(center[2], 3);
+        assert_eq!(center[1], 4);
+
+        let even_n_even_len = Board::<8>::create_table(4);
+        test_board_helper::check_wall::<8>(&even_n_even_len);
+        test_board_helper::check_food_count::<8>(&even_n_even_len);
+        let center = even_n_even_len[3];
+        assert_eq!(center[4], 1);
+        assert_eq!(center[3], 2);
+        assert_eq!(center[2], 3);
+        assert_eq!(center[1], 4);
+    }
+}
