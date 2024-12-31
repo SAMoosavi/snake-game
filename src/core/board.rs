@@ -109,7 +109,9 @@ impl<const N: usize> Board<N> {
     }
 
     pub fn rotation(&mut self, direction: Direction) {
-        self.direction = direction;
+        if !self.direction.is_opposite(&direction) {
+            self.direction = direction;
+        }
     }
 
     fn find_lunch_point(game_table: &[[i8; N]; N]) -> Point {
