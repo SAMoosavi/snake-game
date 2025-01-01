@@ -65,7 +65,7 @@ impl<const N: usize> Board<N> {
                 row.iter()
                     .map(|&cell| match cell {
                         EMPTY_CELL => " ".to_string(),
-                        FOOD_CELL => "\u{2B24}".to_string(),
+                        FOOD_CELL => "O".to_string(),
                         BLOCK_CELL => "\u{25A0}".to_string(),
                         _ => ".".to_string(),
                     })
