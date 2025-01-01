@@ -1,26 +1,16 @@
 mod core;
+mod tui;
 
 use core::{Board, Direction};
+use tui::Tui;
 
-const N: usize = 6;
-
-fn p_array(table: &[[i8; N]; N]) {
-    for row in table {
-        println!("{:?}", row);
+#[tokio::main]
+async fn main() {
+    match Board::<20>::new(3) {
+        Ok(game) => match Tui::new(game).await {
+            Ok(_) => {}
+            Err(e) => println!("{e}"),
+        },
+        Err(e) => println!("{e}"),
     }
-}
-
-fn main() {
-    let mut a = Board::<N>::new(3).unwrap();
-    p_array(a.get_table());
-
-    a.rotation(Direction::Down);
-    while a.walk() {
-        p_array(a.get_table());
-    }
-
-    println!("game over");
-    p_array(a.get_table());
-
-    println!("{}", a.get_score());
 }
