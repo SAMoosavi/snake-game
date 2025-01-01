@@ -58,8 +58,20 @@ impl<const N: usize> Board<N> {
         game_table
     }
 
-    pub fn get_table(&self) -> &[[i8; N]; N] {
-        &self.game_table
+    pub fn get_table(&self) -> Vec<Vec<String>> {
+        self.game_table
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|&cell| match cell {
+                        EMPTY_CELL => " ".to_string(),
+                        FOOD_CELL => "\u{2B24}".to_string(),
+                        BLOCK_CELL => "\u{25A0}".to_string(),
+                        _ => ".".to_string(),
+                    })
+                    .collect()
+            })
+            .collect()
     }
 
     pub fn get_score(&self) -> &usize {
@@ -72,7 +84,7 @@ impl<const N: usize> Board<N> {
         for (x, row) in &mut self.game_table.iter_mut().enumerate() {
             if x != 1 || x != N - 1 {
                 for (y, cell) in row.iter_mut().enumerate() {
-                    if *cell != EMPTY_CELL || *cell != BLOCK_CELL {
+                    if *cell != EMPTY_CELL && *cell != BLOCK_CELL && *cell != FOOD_CELL {
                         if *cell == self.length as i8 {
                             *cell = EMPTY_CELL;
                             tail_point = Point { x, y };
@@ -136,7 +148,9 @@ impl<const N: usize> Board<N> {
 #[cfg(test)]
 mod test_board {
     mod test_board_helper {
-        use super::super::{BLOCK_CELL, FOOD_CELL};
+        use crate::core::point::Point;
+
+        use super::super::{BLOCK_CELL, EMPTY_CELL, FOOD_CELL};
 
         fn is_block_row(row: &[i8]) -> bool {
             row.iter().all(|&cell| cell == BLOCK_CELL)
@@ -160,9 +174,20 @@ mod test_board {
                 assert_eq!(row[N - 1], BLOCK_CELL);
             }
         }
+
+        pub fn change_food<const N: usize>(table: &mut [[i8; N]; N], point: Point) {
+            table.iter_mut().flatten().for_each(|cell| {
+                if *cell == FOOD_CELL {
+                    *cell = EMPTY_CELL;
+                }
+            });
+            table[point.x][point.y] = FOOD_CELL;
+        }
     }
 
-    use super::Board;
+    use crate::core::point::Point;
+
+    use super::{Board, Direction, BLOCK_CELL, EMPTY_CELL, FOOD_CELL};
 
     #[test]
     fn check_create_size() {
@@ -210,5 +235,112 @@ mod test_board {
         assert_eq!(center[3], 2);
         assert_eq!(center[2], 3);
         assert_eq!(center[1], 4);
+    }
+
+    #[test]
+    fn walk() {
+        let mut game = Board::<7>::new(3).unwrap();
+
+        test_board_helper::change_food(&mut game.game_table, Point { x: 4, y: 5 });
+        assert_eq!(
+            game.game_table,
+            [
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [BLOCK_CELL, EMPTY_CELL, 3, 2, 1, EMPTY_CELL, BLOCK_CELL],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, FOOD_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ],
+            ]
+        );
+        assert!(game.walk());
+
+        assert_eq!(
+            game.game_table,
+            [
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, 3, 2, 1, BLOCK_CELL],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, FOOD_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ],
+            ]
+        );
+
+        game.rotation(Direction::Down);
+
+        assert_eq!(game.direction, Direction::Down);
+
+        assert!(game.walk());
+
+        test_board_helper::check_food_count(&game.game_table);
+
+        test_board_helper::change_food(&mut game.game_table, Point { x: 1, y: 1 });
+
+        assert_eq!(
+            game.game_table,
+            [
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, FOOD_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, 4, 3, 2, BLOCK_CELL],
+                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 1, BLOCK_CELL],
+                [
+                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
+                    BLOCK_CELL
+                ],
+                [
+                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
+                    BLOCK_CELL
+                ]
+            ]
+        );
     }
 }
