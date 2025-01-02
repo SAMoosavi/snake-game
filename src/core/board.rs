@@ -81,13 +81,14 @@ impl Board {
 
         let is_out_of_bounds = new_head.get_x() < 0
             || new_head.get_y() < 0
-            || new_head.get_x() > self.table_size as i16
-            || new_head.get_y() > self.table_size as i16;
+            || new_head.get_x() >= self.table_size as i16
+            || new_head.get_y() >= self.table_size as i16;
 
         let collides_with_body = self.game_table.contains(&new_head);
 
         if is_out_of_bounds || collides_with_body {
             self.game_table.pop_back();
+            self.game_table.pop_front();
 
             false
         } else if new_head == self.food {
@@ -293,7 +294,6 @@ mod test_board {
             ])
         );
 
-        assert!(game.walk());
         assert!(game.walk());
         assert!(!game.walk());
     }
