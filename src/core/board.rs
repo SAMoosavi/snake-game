@@ -1,7 +1,7 @@
 use super::{direction::Direction, point::Point};
-use std::collections::LinkedList;
-
+use itertools::Itertools;
 use rand::Rng;
+use std::collections::LinkedList;
 
 type Table = LinkedList<Point>;
 
@@ -41,11 +41,11 @@ impl Board {
 
         if length % 2 != 0 {
             for i in -offset..=offset {
-                game_table.push_back(Point::new(half, half + i));
+                game_table.push_front(Point::new(half, half + i));
             }
         } else {
             for i in -offset..offset {
-                game_table.push_back(Point::new(half, half + i));
+                game_table.push_front(Point::new(half, half + i));
             }
         }
 
@@ -54,7 +54,7 @@ impl Board {
 
     pub fn get_table(&self) -> Vec<Vec<String>> {
         let mut result =
-            vec![vec![".".to_string(); self.table_size as usize]; self.table_size as usize];
+            vec![vec![":".to_string(); self.table_size as usize]; self.table_size as usize];
 
         self.game_table
             .iter()
@@ -81,13 +81,14 @@ impl Board {
 
         if new_head == self.food {
             self.game_table.push_front(new_head);
-                self.score += 1;
+            self.score += 1;
             self.food = Self::find_lunch_point(self.table_size, &self.game_table);
             true
         } else if new_head.get_x() < 0
             || new_head.get_y() < 0
             || new_head.get_x() > self.table_size as i16
             || new_head.get_y() > self.table_size as i16
+            || self.game_table.iter().any(|p| p == &new_head)
         {
             self.game_table.pop_back();
             false
@@ -118,166 +119,137 @@ impl Board {
             }
         }
     }
+
+    #[cfg(test)]
+    pub fn print(&self) {
+        for ele in self.get_table() {
+            println!("{}", ele.iter().join(""));
+        }
+    }
 }
 
 #[cfg(test)]
 mod test_board {
-    mod test_board_helper {
-        use crate::core::point::Point;
-
-        use super::super::{BLOCK_CELL, EMPTY_CELL, FOOD_CELL};
-
-        fn is_block_row(row: &[i8]) -> bool {
-            row.iter().all(|&cell| cell == BLOCK_CELL)
-        }
-
-        pub fn check_food_count<const N: usize>(table: &[[i8; N]; N]) {
-            let food_count = table
-                .iter()
-                .flat_map(|row| row.iter())
-                .filter(|&&cell| cell == FOOD_CELL)
-                .count();
-            assert_eq!(food_count, 1, "the number of food is not correct")
-        }
-
-        pub fn check_wall<const N: usize>(table: &[[i8; N]; N]) {
-            assert!(is_block_row(&table[0]));
-            assert!(is_block_row(&table[N - 1]));
-
-            for row in &table[1..N - 1] {
-                assert_eq!(row[0], BLOCK_CELL);
-                assert_eq!(row[N - 1], BLOCK_CELL);
-            }
-        }
-
-        pub fn change_food<const N: usize>(table: &mut [[i8; N]; N], point: Point) {
-            table.iter_mut().flatten().for_each(|cell| {
-                if *cell == FOOD_CELL {
-                    *cell = EMPTY_CELL;
-                }
-            });
-            table[point.x][point.y] = FOOD_CELL;
-        }
-    }
-
-    use crate::core::point::Point;
-
-    use super::{Board, Direction, BLOCK_CELL, EMPTY_CELL, FOOD_CELL};
+    use super::{super::point::Point, Board, Direction};
+    use std::collections::LinkedList;
 
     #[test]
     fn check_create_size() {
-        assert!(Board::<4>::new(3).is_err());
-        assert!(Board::<5>::new(3).is_err());
-        assert!(Board::<6>::new(3).is_ok());
+        assert!(Board::new(2, 3).is_err());
+        assert!(Board::new(3, 3).is_err());
+        assert!(Board::new(4, 3).is_ok());
 
-        assert!(Board::<5>::new(4).is_err());
-        assert!(Board::<6>::new(4).is_err());
-        assert!(Board::<7>::new(4).is_ok());
+        assert!(Board::new(3, 4).is_err());
+        assert!(Board::new(4, 4).is_err());
+        assert!(Board::new(5, 4).is_ok());
     }
 
     #[test]
     fn check_create_table() {
-        let odd_n_odd_len = Board::<7>::create_table(3);
-        test_board_helper::check_wall::<7>(&odd_n_odd_len);
-        test_board_helper::check_food_count::<7>(&odd_n_odd_len);
-        let center = odd_n_odd_len[3];
-        assert_eq!(center[4], 1);
-        assert_eq!(center[3], 2);
-        assert_eq!(center[2], 3);
+        let odd_n_odd_len = Board::create_table(7, 3);
+        assert_eq!(
+            odd_n_odd_len,
+            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+        );
 
-        let even_n_odd_len = Board::<8>::create_table(3);
-        test_board_helper::check_wall::<8>(&even_n_odd_len);
-        test_board_helper::check_food_count::<8>(&even_n_odd_len);
-        let center = even_n_odd_len[3];
-        assert_eq!(center[4], 1);
-        assert_eq!(center[3], 2);
-        assert_eq!(center[2], 3);
+        let even_n_odd_len = Board::create_table(8, 3);
+        assert_eq!(
+            even_n_odd_len,
+            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+        );
 
-        let odd_n_even_len = Board::<7>::create_table(4);
-        test_board_helper::check_wall::<7>(&odd_n_even_len);
-        test_board_helper::check_food_count::<7>(&odd_n_even_len);
-        let center = odd_n_even_len[3];
-        assert_eq!(center[4], 1);
-        assert_eq!(center[3], 2);
-        assert_eq!(center[2], 3);
-        assert_eq!(center[1], 4);
+        let odd_n_even_len = Board::create_table(7, 4);
+        assert_eq!(
+            odd_n_even_len,
+            LinkedList::from([
+                Point::new(3, 4),
+                Point::new(3, 3),
+                Point::new(3, 2),
+                Point::new(3, 1)
+            ])
+        );
 
-        let even_n_even_len = Board::<8>::create_table(4);
-        test_board_helper::check_wall::<8>(&even_n_even_len);
-        test_board_helper::check_food_count::<8>(&even_n_even_len);
-        let center = even_n_even_len[3];
-        assert_eq!(center[4], 1);
-        assert_eq!(center[3], 2);
-        assert_eq!(center[2], 3);
-        assert_eq!(center[1], 4);
+        let even_n_even_len = Board::create_table(8, 4);
+        assert_eq!(
+            even_n_even_len,
+            LinkedList::from([
+                Point::new(3, 4),
+                Point::new(3, 3),
+                Point::new(3, 2),
+                Point::new(3, 1)
+            ])
+        );
     }
 
     #[test]
     fn walk() {
-        let mut game = Board::<7>::new(3).unwrap();
+        let mut game = Board::new(5, 3).unwrap();
+        game.food = Point::new(0, 0);
 
-        test_board_helper::change_food(&mut game.game_table, Point { x: 4, y: 5 });
         assert_eq!(
             game.game_table,
-            [
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [BLOCK_CELL, EMPTY_CELL, 3, 2, 1, EMPTY_CELL, BLOCK_CELL],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, FOOD_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ],
-            ]
+            LinkedList::from([Point::new(2, 3), Point::new(2, 2), Point::new(2, 1)])
         );
+        assert!(game.walk());
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([Point::new(2, 4), Point::new(2, 3), Point::new(2, 2)])
+        );
+        game.rotation(Direction::Down);
+
+        assert!(game.walk());
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([Point::new(3, 4), Point::new(2, 4), Point::new(2, 3)])
+        );
+
+        game.rotation(Direction::Left);
+
+        assert!(game.walk());
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([Point::new(3, 3), Point::new(3, 4), Point::new(2, 4)])
+        );
+
+        game.rotation(Direction::Up);
+
+        assert!(game.walk());
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([Point::new(2, 3), Point::new(3, 3), Point::new(3, 4)])
+        );
+
+        let mut game = Board::new(7, 5).unwrap();
+        game.food = Point::new(6, 6);
+
+        game.game_table = LinkedList::from([
+            Point::new(1, 1),
+            Point::new(2, 1),
+            Point::new(2, 0),
+            Point::new(1, 0),
+            Point::new(0, 0),
+        ]);
+        game.direction = Direction::Left;
+
+        assert!(!game.walk());
+    }
+
+    #[test]
+    fn walk_system_test() {
+        let mut game = Board::new(7, 3).unwrap();
+
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+        );
+
+        game.food = Point::new(4, 5);
+
         assert!(game.walk());
 
         assert_eq!(
             game.game_table,
-            [
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, 3, 2, 1, BLOCK_CELL],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, FOOD_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ],
-            ]
+            LinkedList::from([Point::new(3, 5), Point::new(3, 4), Point::new(3, 3)])
         );
 
         game.rotation(Direction::Down);
@@ -285,37 +257,40 @@ mod test_board {
         assert_eq!(game.direction, Direction::Down);
 
         assert!(game.walk());
-
-        test_board_helper::check_food_count(&game.game_table);
-
-        test_board_helper::change_food(&mut game.game_table, Point { x: 1, y: 1 });
-
         assert_eq!(
             game.game_table,
-            [
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, FOOD_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, 4, 3, 2, BLOCK_CELL],
-                [BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 1, BLOCK_CELL],
-                [
-                    BLOCK_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL,
-                    BLOCK_CELL
-                ],
-                [
-                    BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL, BLOCK_CELL,
-                    BLOCK_CELL
-                ]
-            ]
+            LinkedList::from([
+                Point::new(4, 5),
+                Point::new(3, 5),
+                Point::new(3, 4),
+                Point::new(3, 3)
+            ])
         );
+
+        assert!(![
+            Point::new(4, 5),
+            Point::new(3, 5),
+            Point::new(3, 4),
+            Point::new(3, 3)
+        ]
+        .iter()
+        .any(|p| p == &game.food));
+
+        game.food = Point::new(0, 0);
+
+        assert!(game.walk());
+        assert_eq!(
+            game.game_table,
+            LinkedList::from([
+                Point::new(5, 5),
+                Point::new(4, 5),
+                Point::new(3, 5),
+                Point::new(3, 4)
+            ])
+        );
+
+        assert!(game.walk());
+        assert!(game.walk());
+        assert!(!game.walk());
     }
 }
