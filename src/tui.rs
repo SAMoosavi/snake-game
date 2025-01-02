@@ -13,14 +13,14 @@ use ratatui::{
 };
 use tokio::time::{sleep, Duration};
 
-struct App<const N: usize> {
-    game: Board<N>,
+struct App {
+    game: Board,
     stop: bool,
     exit: bool,
 }
 
-impl<const N: usize> App<N> {
-    pub fn new(game: Board<N>) -> Self {
+impl App {
+    pub fn new(game: Board) -> Self {
         Self {
             game,
             stop: false,
@@ -83,7 +83,7 @@ impl<const N: usize> App<N> {
     }
 }
 
-impl<const N: usize> Widget for &App<N> {
+impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(
             format!(" Your score {} ", self.game.get_score())
@@ -123,7 +123,7 @@ impl<const N: usize> Widget for &App<N> {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn new<const N: usize>(game: Board<N>) -> Result<(), std::io::Error> {
+    pub async fn new(game: Board) -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
         let app_result = App::new(game).run(&mut terminal).await;
         ratatui::restore();

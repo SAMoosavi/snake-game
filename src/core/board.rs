@@ -1,126 +1,100 @@
 use super::{direction::Direction, point::Point};
+use std::collections::LinkedList;
 
 use rand::Rng;
 
-const BLOCK_CELL: i8 = -1;
-const FOOD_CELL: i8 = -2;
-const EMPTY_CELL: i8 = 0;
+type Table = LinkedList<Point>;
 
-pub struct Board<const N: usize> {
-    game_table: [[i8; N]; N],
-    length: u8,
-    score: usize,
+pub struct Board {
+    game_table: Table,
+    food: Point,
+    table_size: u16,
+    score: u16,
     direction: Direction,
 }
 
-impl<const N: usize> Board<N> {
-    pub fn new(length: u8) -> Result<Self, String> {
-        if (length as usize) + 2 >= N {
+impl Board {
+    pub fn new(table_size: u16, length: u16) -> Result<Self, String> {
+        if length >= table_size {
             return Err(format!(
-                "the table size must be grater than of start snake length + 2: {}",
-                length + 2
+                "the table size must be grater than of start snake length: {}",
+                length
             ));
         }
 
+        let game_table = Self::create_table(table_size, length);
+
         Ok(Self {
-            game_table: Self::create_table(length),
-            length,
+            food: Self::find_lunch_point(table_size, &game_table),
+            game_table,
+            table_size,
             score: 0,
             direction: Direction::Right,
         })
     }
 
-    fn create_table(length: u8) -> [[i8; N]; N] {
-        let mut game_table = [[EMPTY_CELL; N]; N];
-        game_table[0].fill(BLOCK_CELL);
-        game_table[N - 1].fill(BLOCK_CELL);
-        for row in &mut game_table[1..N - 1] {
-            row[0] = BLOCK_CELL;
-            row[N - 1] = BLOCK_CELL;
-        }
+    fn create_table(table_size: u16, length: u16) -> Table {
+        let mut game_table = Table::new();
 
-        let half = (N - 1) / 2;
-        let offset = (length / 2) as isize;
+        let half = (table_size as i16 - 1) / 2;
+        let offset = length as i16 / 2;
 
         if length % 2 != 0 {
-            for (j, i) in (-offset..=offset).rev().enumerate() {
-                game_table[half][((half as isize) + i) as usize] = (j + 1) as i8;
+            for i in -offset..=offset {
+                game_table.push_back(Point::new(half, half + i));
             }
         } else {
-            for (j, i) in (-offset..offset).rev().enumerate() {
-                game_table[half][((half as isize) + i) as usize] = (j + 1) as i8;
+            for i in -offset..offset {
+                game_table.push_back(Point::new(half, half + i));
             }
         }
-
-        let Point { x, y } = Self::find_lunch_point(&game_table);
-        game_table[x][y] = FOOD_CELL;
 
         game_table
     }
 
     pub fn get_table(&self) -> Vec<Vec<String>> {
+        let mut result =
+            vec![vec![".".to_string(); self.table_size as usize]; self.table_size as usize];
+
         self.game_table
             .iter()
-            .map(|row| {
-                row.iter()
-                    .map(|&cell| match cell {
-                        EMPTY_CELL => " ".to_string(),
-                        FOOD_CELL => "O".to_string(),
-                        BLOCK_CELL => "\u{25A0}".to_string(),
-                        _ => ".".to_string(),
-                    })
-                    .collect()
-            })
-            .collect()
+            .for_each(|p| result[(p.get_x()) as usize][(p.get_y()) as usize] = " ".to_string());
+
+        result[(self.food.get_x()) as usize][(self.food.get_y()) as usize] = "O".to_string();
+
+        result
     }
 
-    pub fn get_score(&self) -> &usize {
+    pub fn get_score(&self) -> &u16 {
         &self.score
     }
 
     pub fn walk(&mut self) -> bool {
-        let mut tail_point = Point { x: 0, y: 0 };
-        let mut head_point = Point { x: 0, y: 0 };
-        for (x, row) in &mut self.game_table.iter_mut().enumerate() {
-            if x != 1 || x != N - 1 {
-                for (y, cell) in row.iter_mut().enumerate() {
-                    if *cell != EMPTY_CELL && *cell != BLOCK_CELL && *cell != FOOD_CELL {
-                        if *cell == self.length as i8 {
-                            *cell = EMPTY_CELL;
-                            tail_point = Point { x, y };
-                        } else {
-                            *cell += 1;
-                            if *cell == 2 {
-                                head_point = match &self.direction {
-                                    Direction::Up => Point { x: x - 1, y },
-                                    Direction::Down => Point { x: x + 1, y },
-                                    Direction::Left => Point { x, y: y - 1 },
-                                    Direction::Right => Point { x, y: y + 1 },
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let head = self.game_table.front().unwrap();
 
-        match self.game_table[head_point.x][head_point.y] {
-            FOOD_CELL => {
-                self.length += 1;
-                self.game_table[tail_point.x][tail_point.y] = self.length as i8;
-                self.game_table[head_point.x][head_point.y] = 1;
+        let new_head = match &self.direction {
+            Direction::Up => Point::new(head.get_x() - 1, head.get_y()),
+            Direction::Down => Point::new(head.get_x() + 1, head.get_y()),
+            Direction::Left => Point::new(head.get_x(), head.get_y() - 1),
+            Direction::Right => Point::new(head.get_x(), head.get_y() + 1),
+        };
+
+        if new_head == self.food {
+            self.game_table.push_front(new_head);
                 self.score += 1;
-
-                let lunch_point = Self::find_lunch_point(&self.game_table);
-                self.game_table[lunch_point.x][lunch_point.y] = FOOD_CELL;
-                true
-            }
-            EMPTY_CELL => {
-                self.game_table[head_point.x][head_point.y] = 1;
-
-                true
-            }
-            _ => false,
+            self.food = Self::find_lunch_point(self.table_size, &self.game_table);
+            true
+        } else if new_head.get_x() < 0
+            || new_head.get_y() < 0
+            || new_head.get_x() > self.table_size as i16
+            || new_head.get_y() > self.table_size as i16
+        {
+            self.game_table.pop_back();
+            false
+        } else {
+            self.game_table.push_front(new_head);
+            self.game_table.pop_back();
+            true
         }
     }
 
@@ -130,16 +104,17 @@ impl<const N: usize> Board<N> {
         }
     }
 
-    fn find_lunch_point(game_table: &[[i8; N]; N]) -> Point {
+    fn find_lunch_point(table_size: u16, game_table: &Table) -> Point {
         let mut rng = rand::thread_rng();
-        let mut x;
-        let mut y;
+        let mut point;
         loop {
-            x = rng.gen_range(1..N - 1);
-            y = rng.gen_range(1..N - 1);
+            point = Point::new(
+                rng.gen_range(0..table_size as i16),
+                rng.gen_range(0..table_size as i16),
+            );
 
-            if game_table[x][y] == 0 {
-                return Point { x, y };
+            if !game_table.iter().any(|p| p == &point) {
+                return point;
             }
         }
     }
