@@ -116,8 +116,8 @@ impl Board {
         let mut point;
         loop {
             point = Point::new(
-                rng.gen_range(0..=table_size as i16),
-                rng.gen_range(0..=table_size as i16),
+                rng.gen_range(0..table_size as i16),
+                rng.gen_range(0..table_size as i16),
             );
 
             if !game_table.contains(&point) {
