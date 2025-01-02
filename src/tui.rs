@@ -106,7 +106,7 @@ impl Widget for &App {
         let table = self.game.get_table();
         let text = table
             .iter()
-            .map(|row| Line::from(row.iter().map(|cell| Span::from(cell)).collect::<Vec<_>>()))
+            .map(|row| Line::from(row.iter().map(Span::from).collect::<Vec<_>>()))
             .collect::<Vec<_>>();
 
         Paragraph::new(text)
@@ -123,7 +123,7 @@ impl Widget for &App {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn new(game: Board) -> Result<(), std::io::Error> {
+    pub async fn tui(game: Board) -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
         let app_result = App::new(game).run(&mut terminal).await;
         ratatui::restore();

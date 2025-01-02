@@ -1,7 +1,7 @@
 use super::{direction::Direction, point::Point};
-use itertools::Itertools;
-use rand::Rng;
 use std::collections::LinkedList;
+
+use rand::Rng;
 
 type Table = LinkedList<Point>;
 
@@ -39,14 +39,14 @@ impl Board {
         let half = (table_size as i16 - 1) / 2;
         let offset = length as i16 / 2;
 
-        if length % 2 != 0 {
-            for i in -offset..=offset {
-                game_table.push_front(Point::new(half, half + i));
-            }
+        let range = if length % 2 == 0 {
+            -offset..=offset - 1
         } else {
-            for i in -offset..offset {
-                game_table.push_front(Point::new(half, half + i));
-            }
+            -offset..=offset
+        };
+
+        for i in range {
+            game_table.push_front(Point::new(half, half + i));
         }
 
         game_table
@@ -79,22 +79,27 @@ impl Board {
             Direction::Right => Point::new(head.get_x(), head.get_y() + 1),
         };
 
-        if new_head == self.food {
+        let is_out_of_bounds = new_head.get_x() < 0
+            || new_head.get_y() < 0
+            || new_head.get_x() > self.table_size as i16
+            || new_head.get_y() > self.table_size as i16;
+
+        let collides_with_body = self.game_table.contains(&new_head);
+
+        if is_out_of_bounds || collides_with_body {
+            self.game_table.pop_back();
+
+            false
+        } else if new_head == self.food {
             self.game_table.push_front(new_head);
             self.score += 1;
             self.food = Self::find_lunch_point(self.table_size, &self.game_table);
+
             true
-        } else if new_head.get_x() < 0
-            || new_head.get_y() < 0
-            || new_head.get_x() > self.table_size as i16
-            || new_head.get_y() > self.table_size as i16
-            || self.game_table.iter().any(|p| p == &new_head)
-        {
-            self.game_table.pop_back();
-            false
         } else {
             self.game_table.push_front(new_head);
             self.game_table.pop_back();
+
             true
         }
     }
@@ -110,11 +115,11 @@ impl Board {
         let mut point;
         loop {
             point = Point::new(
-                rng.gen_range(0..table_size as i16),
-                rng.gen_range(0..table_size as i16),
+                rng.gen_range(0..=table_size as i16),
+                rng.gen_range(0..=table_size as i16),
             );
 
-            if !game_table.iter().any(|p| p == &point) {
+            if !game_table.contains(&point) {
                 return point;
             }
         }
@@ -122,9 +127,9 @@ impl Board {
 
     #[cfg(test)]
     pub fn print(&self) {
-        for ele in self.get_table() {
-            println!("{}", ele.iter().join(""));
-        }
+        self.get_table()
+            .iter()
+            .for_each(|row| println!("{}", row.concat()));
     }
 }
 
@@ -273,8 +278,7 @@ mod test_board {
             Point::new(3, 4),
             Point::new(3, 3)
         ]
-        .iter()
-        .any(|p| p == &game.food));
+        .contains(&game.food));
 
         game.food = Point::new(0, 0);
 
