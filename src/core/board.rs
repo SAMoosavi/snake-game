@@ -52,13 +52,60 @@ impl Board {
         game_table
     }
 
+    fn create_snake(&self, result: &mut [Vec<String>]) {
+        fn get_char(before: &Direction, after: &Direction) -> String {
+            match (before, after) {
+                (&Direction::Left, &Direction::Right) => "─",
+                (&Direction::Right, &Direction::Left) => "─",
+                (&Direction::Down, &Direction::Up) => "│",
+                (&Direction::Up, &Direction::Down) => "│",
+                (&Direction::Down, &Direction::Right) => "┌",
+                (&Direction::Right, &Direction::Down) => "┌",
+                (&Direction::Down, &Direction::Left) => "┐",
+                (&Direction::Left, &Direction::Down) => "┐",
+                (&Direction::Up, &Direction::Right) => "└",
+                (&Direction::Right, &Direction::Up) => "└",
+                (&Direction::Up, &Direction::Left) => "┘",
+                (&Direction::Left, &Direction::Up) => "┘",
+                (&Direction::None, &Direction::Down) => "│",
+                (&Direction::Down, &Direction::None) => "│",
+                (&Direction::None, &Direction::Up) => "│",
+                (&Direction::Up, &Direction::None) => "│",
+                (&Direction::None, &Direction::Left) => "─",
+                (&Direction::Left, &Direction::None) => "─",
+                (&Direction::None, &Direction::Right) => "─",
+                (&Direction::Right, &Direction::None) => "─",
+                _ => todo!(),
+            }
+            .to_string()
+        }
+
+        let mut iter = self.game_table.iter();
+        if let Some(first) = iter.next() {
+            let mut prev_direction = Direction::None;
+            let mut current = first;
+
+            for next in iter {
+                let char_to_set = get_char(
+                    &prev_direction,
+                    &current.direction_of_neighbor(next).unwrap(),
+                );
+                result[current.get_x() as usize][current.get_y() as usize] = char_to_set;
+
+                prev_direction = next.direction_of_neighbor(current).unwrap();
+                current = next;
+            }
+
+            result[current.get_x() as usize][current.get_y() as usize] =
+                get_char(&prev_direction, &Direction::None);
+        }
+    }
+
     pub fn get_table(&self) -> Vec<Vec<String>> {
         let mut result =
             vec![vec![":".to_string(); self.table_size as usize]; self.table_size as usize];
 
-        self.game_table
-            .iter()
-            .for_each(|p| result[(p.get_x()) as usize][(p.get_y()) as usize] = " ".to_string());
+        self.create_snake(&mut result);
 
         result[(self.food.get_x()) as usize][(self.food.get_y()) as usize] = "O".to_string();
 

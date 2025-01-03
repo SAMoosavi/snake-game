@@ -25,6 +25,7 @@ impl Point {
             Direction::Down => Point::new(self.x + 1, self.y),
             Direction::Left => Point::new(self.x, self.y - 1),
             Direction::Right => Point::new(self.x, self.y + 1),
+            Direction::None => todo!(),
         }
     }
 

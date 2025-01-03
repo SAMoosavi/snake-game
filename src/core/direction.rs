@@ -4,6 +4,7 @@ pub enum Direction {
     Down,
     Left,
     Right,
+    None,
 }
 
 impl Direction {
@@ -28,6 +29,7 @@ mod test_direction {
         let right = Direction::Right;
         let up = Direction::Up;
         let down = Direction::Down;
+        let none = Direction::None;
 
         assert!(left.is_opposite(&right));
         assert!(right.is_opposite(&left));
@@ -37,17 +39,21 @@ mod test_direction {
         assert!(!left.is_opposite(&left));
         assert!(!left.is_opposite(&up));
         assert!(!left.is_opposite(&down));
+        assert!(!left.is_opposite(&none));
 
         assert!(!right.is_opposite(&right));
         assert!(!right.is_opposite(&up));
         assert!(!right.is_opposite(&down));
+        assert!(!right.is_opposite(&none));
 
         assert!(!up.is_opposite(&up));
         assert!(!up.is_opposite(&left));
         assert!(!up.is_opposite(&right));
+        assert!(!up.is_opposite(&none));
 
         assert!(!down.is_opposite(&down));
         assert!(!down.is_opposite(&left));
         assert!(!down.is_opposite(&right));
+        assert!(!down.is_opposite(&none));
     }
 }
