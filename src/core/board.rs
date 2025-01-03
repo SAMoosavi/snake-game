@@ -72,12 +72,7 @@ impl Board {
     pub fn walk(&mut self) -> bool {
         let head = self.game_table.front().unwrap();
 
-        let new_head = match &self.direction {
-            Direction::Up => Point::new(head.get_x() - 1, head.get_y()),
-            Direction::Down => Point::new(head.get_x() + 1, head.get_y()),
-            Direction::Left => Point::new(head.get_x(), head.get_y() - 1),
-            Direction::Right => Point::new(head.get_x(), head.get_y() + 1),
-        };
+        let new_head = head.get_neighbor(&self.direction);
 
         let is_out_of_bounds = new_head.get_x() < 0
             || new_head.get_y() < 0
