@@ -29,16 +29,13 @@ impl Point {
         }
     }
 
-    pub fn direction_of_neighbor(&self, other: &Self) -> Result<Direction, String> {
+    pub fn direction_of_neighbor(&self, other: &Self) -> Direction {
         match (other.x - self.x, other.y - self.y) {
-            (1, 0) => Ok(Direction::Down),
-            (-1, 0) => Ok(Direction::Up),
-            (0, 1) => Ok(Direction::Right),
-            (0, -1) => Ok(Direction::Left),
-            _ => Err(format!(
-                "The points {:?} and {:?} are not neighbors",
-                self, other
-            )),
+            (x, 0) if x > 0 => Direction::Down,
+            (x, 0) if x < 0 => Direction::Up,
+            (0, y) if y > 0 => Direction::Right,
+            (0, y) if y < 0 => Direction::Left,
+            _ => Direction::None,
         }
     }
 }
@@ -61,14 +58,14 @@ mod test_point {
         assert_eq!(right, Point { x: 1, y: 2 });
         assert_eq!(left, Point { x: 1, y: 0 });
 
-        assert_eq!(point.direction_of_neighbor(&down).unwrap(), Direction::Down);
-        assert_eq!(point.direction_of_neighbor(&up).unwrap(), Direction::Up);
-        assert_eq!(
-            point.direction_of_neighbor(&right).unwrap(),
-            Direction::Right
-        );
-        assert_eq!(point.direction_of_neighbor(&left).unwrap(), Direction::Left);
+        assert_eq!(point.direction_of_neighbor(&down), Direction::Down);
+        assert_eq!(point.direction_of_neighbor(&up), Direction::Up);
+        assert_eq!(point.direction_of_neighbor(&right), Direction::Right);
+        assert_eq!(point.direction_of_neighbor(&left), Direction::Left);
 
-        assert!(point.direction_of_neighbor(&Point::new(1, 3)).is_err());
+        assert_eq!(
+            point.direction_of_neighbor(&Point::new(2, 3)),
+            Direction::None
+        );
     }
 }

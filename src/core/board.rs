@@ -55,10 +55,6 @@ impl Board {
     fn create_snake(&self, result: &mut [Vec<String>]) {
         fn get_char(before: &Direction, after: &Direction) -> String {
             match (before, after) {
-                (&Direction::Left, &Direction::Right) => "─",
-                (&Direction::Right, &Direction::Left) => "─",
-                (&Direction::Down, &Direction::Up) => "│",
-                (&Direction::Up, &Direction::Down) => "│",
                 (&Direction::Down, &Direction::Right) => "┌",
                 (&Direction::Right, &Direction::Down) => "┌",
                 (&Direction::Down, &Direction::Left) => "┐",
@@ -67,15 +63,25 @@ impl Board {
                 (&Direction::Right, &Direction::Up) => "└",
                 (&Direction::Up, &Direction::Left) => "┘",
                 (&Direction::Left, &Direction::Up) => "┘",
-                (&Direction::None, &Direction::Down) => "│",
-                (&Direction::Down, &Direction::None) => "│",
-                (&Direction::None, &Direction::Up) => "│",
-                (&Direction::Up, &Direction::None) => "│",
                 (&Direction::None, &Direction::Left) => "─",
                 (&Direction::Left, &Direction::None) => "─",
                 (&Direction::None, &Direction::Right) => "─",
                 (&Direction::Right, &Direction::None) => "─",
-                _ => todo!(),
+                (&Direction::Left, &Direction::Left) => "─",
+                (&Direction::Right, &Direction::Right) => "─",
+                (&Direction::Left, &Direction::Right) => "─",
+                (&Direction::Right, &Direction::Left) => "─",
+                (&Direction::Down, &Direction::Up) => "│",
+                (&Direction::Up, &Direction::Down) => "│",
+                (&Direction::None, &Direction::Down) => "│",
+                (&Direction::Down, &Direction::None) => "│",
+                (&Direction::None, &Direction::Up) => "│",
+                (&Direction::Up, &Direction::None) => "│",
+                (&Direction::Up, &Direction::Up) => "│",
+                (&Direction::Down, &Direction::Down) => "│",
+                _ => {
+                    panic!("{:?} {:?}", before, after)
+                }
             }
             .to_string()
         }
@@ -86,13 +92,10 @@ impl Board {
             let mut current = first;
 
             for next in iter {
-                let char_to_set = get_char(
-                    &prev_direction,
-                    &current.direction_of_neighbor(next).unwrap(),
-                );
+                let char_to_set = get_char(&prev_direction, &current.direction_of_neighbor(next));
                 result[current.get_x() as usize][current.get_y() as usize] = char_to_set;
 
-                prev_direction = next.direction_of_neighbor(current).unwrap();
+                prev_direction = next.direction_of_neighbor(current);
                 current = next;
             }
 
@@ -119,16 +122,16 @@ impl Board {
     pub fn walk(&mut self) -> bool {
         let head = self.game_table.front().unwrap();
 
-        let new_head = head.get_neighbor(&self.direction);
+        let mut new_head = head.get_neighbor(&self.direction);
 
-        let is_out_of_bounds = new_head.get_x() < 0
-            || new_head.get_y() < 0
-            || new_head.get_x() >= self.table_size as i16
-            || new_head.get_y() >= self.table_size as i16;
+        new_head = Point::new(
+            (new_head.get_x() + self.table_size as i16) % self.table_size as i16,
+            (new_head.get_y() + self.table_size as i16) % self.table_size as i16,
+        );
 
         let collides_with_body = self.game_table.contains(&new_head);
 
-        if is_out_of_bounds || collides_with_body {
+        if collides_with_body {
             self.game_table.pop_back();
             self.game_table.pop_front();
 
@@ -337,6 +340,14 @@ mod test_board {
         );
 
         assert!(game.walk());
-        assert!(!game.walk());
+    }
+
+    #[test]
+    fn bad() {
+        let a = LinkedList::from([Point::new(9, 0), Point::new(9, 19), Point::new(9, 18)]);
+        let mut game = Board::new(20, 3).unwrap();
+        game.game_table = a;
+        game.get_table();
+        let b = LinkedList::from([Point::new(9, 1), Point::new(9, 0), Point::new(9, 19)]);
     }
 }
