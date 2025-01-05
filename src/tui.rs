@@ -5,7 +5,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::Stylize,
+    style::{Color, Style, Stylize},
     symbols::border,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
@@ -85,22 +85,22 @@ impl App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(
-            format!(" Your score {} ", self.game.get_score())
-                .bold()
-                .blue(),
-        );
+        let title = Line::from(vec![
+            " Your score ".into(),
+            format!("{} ", self.game.get_score()).bold().red(),
+        ]);
+
         let instructions = Line::from(vec![
             " Left ".into(),
-            "<\u{2190}>".blue().bold(),
+            "\u{2190}".red().bold(),
             " Up ".into(),
-            "<\u{2191}>".blue().bold(),
+            "\u{2191}".red().bold(),
             " Right ".into(),
-            "<\u{2192}>".blue().bold(),
+            "\u{2192}".red().bold(),
             " Down ".into(),
-            "<\u{2193}>".blue().bold(),
+            "\u{2193}".red().bold(),
             " Quit ".into(),
-            "<Q> ".blue().bold(),
+            "Q ".red().bold(),
         ]);
 
         let table = self.game.get_table();
@@ -114,9 +114,12 @@ impl Widget for &App {
                 Block::bordered()
                     .title(title.centered())
                     .title_bottom(instructions.centered())
-                    .border_set(border::FULL),
+                    .border_set(border::ROUNDED)
+                    .border_style(Style::default().fg(Color::Blue)),
             )
             .centered()
+            .bg(Color::Black)
+            .fg(Color::Green)
             .render(area, buf);
     }
 }
