@@ -102,34 +102,54 @@ impl Board {
 
             for next in iter {
                 let char_to_set = get_char(&prev_direction, &current.direction_of_neighbor(next));
-                result[current.get_x() as usize][current.get_y() as usize] = char_to_set;
+                result[(current.get_x() + 1) as usize][(current.get_y() + 1) as usize] =
+                    char_to_set;
 
                 prev_direction = next.direction_of_neighbor(current);
                 current = next;
             }
 
-            result[current.get_x() as usize][current.get_y() as usize] =
+            result[(current.get_x() + 1) as usize][(current.get_y() + 1) as usize] =
                 get_char(&prev_direction, &Direction::None);
         }
     }
 
     fn put_walls(&self, result: &mut [Vec<String>]) {
-        self.walls
-            .iter()
-            .for_each(|p| result[p.get_x() as usize][p.get_y() as usize] = "█".to_string());
+        self.walls.iter().for_each(|p| {
+            result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "█".to_string()
+        });
     }
 
     fn put_food(&self, result: &mut [Vec<String>]) {
-        result[(self.food.get_x()) as usize][(self.food.get_y()) as usize] = "●".to_string();
+        result[(self.food.get_x() + 1) as usize][(self.food.get_y() + 1) as usize] =
+            "●".to_string();
+    }
+
+    fn put_boarder(&self, result: &mut [Vec<String>]) {
+        result[0].fill("─".to_string());
+        result[0][0] = "┌".to_string();
+        result[0][(self.table_size + 1) as usize] = "┐".to_string();
+
+        result[(self.table_size + 1) as usize].fill("─".to_string());
+        result[(self.table_size + 1) as usize][0] = "└".to_string();
+        result[(self.table_size + 1) as usize][(self.table_size + 1) as usize] = "┘".to_string();
+
+        for row in &mut result[1..=self.table_size as usize] {
+            row[0] = "│".to_string();
+            row[(self.table_size + 1) as usize] = "│".to_string();
+        }
     }
 
     pub fn get_table(&self) -> Vec<Vec<String>> {
-        let mut result =
-            vec![vec![":".to_string(); self.table_size as usize]; self.table_size as usize];
+        let mut result = vec![
+            vec![" ".to_string(); (self.table_size + 2) as usize];
+            (self.table_size + 2) as usize
+        ];
 
         self.put_food(&mut result);
         self.put_snake(&mut result);
         self.put_walls(&mut result);
+        self.put_boarder(&mut result);
 
         result
     }
