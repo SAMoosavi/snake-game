@@ -11,6 +11,7 @@ pub struct Board {
     table_size: u16,
     score: u16,
     direction: Direction,
+    walls: Table,
 }
 
 impl Board {
@@ -23,13 +24,21 @@ impl Board {
         }
 
         let game_table = Self::create_table(table_size, length);
+        let walls = LinkedList::from([
+            Point::new(10, 1),
+            Point::new(1, 1),
+            Point::new(1, 0),
+            Point::new(1, 2),
+            Point::new(2, 2),
+        ]);
 
         Ok(Self {
-            food: Self::find_lunch_point(table_size, &game_table),
+            food: Self::find_lunch_point(table_size, &game_table, &walls),
             game_table,
             table_size,
             score: 0,
             direction: Direction::Right,
+            walls,
         })
     }
 
@@ -52,7 +61,7 @@ impl Board {
         game_table
     }
 
-    fn create_snake(&self, result: &mut [Vec<String>]) {
+    fn put_snake(&self, result: &mut [Vec<String>]) {
         fn get_char(before: &Direction, after: &Direction) -> String {
             match (before, after) {
                 (&Direction::Down, &Direction::Right) => "┌",
@@ -104,13 +113,23 @@ impl Board {
         }
     }
 
+    fn put_walls(&self, result: &mut [Vec<String>]) {
+        self.walls
+            .iter()
+            .for_each(|p| result[p.get_x() as usize][p.get_y() as usize] = "█".to_string());
+    }
+
+    fn put_food(&self, result: &mut [Vec<String>]) {
+        result[(self.food.get_x()) as usize][(self.food.get_y()) as usize] = "●".to_string();
+    }
+
     pub fn get_table(&self) -> Vec<Vec<String>> {
         let mut result =
             vec![vec![":".to_string(); self.table_size as usize]; self.table_size as usize];
 
-        self.create_snake(&mut result);
-
-        result[(self.food.get_x()) as usize][(self.food.get_y()) as usize] = "O".to_string();
+        self.put_food(&mut result);
+        self.put_snake(&mut result);
+        self.put_walls(&mut result);
 
         result
     }
@@ -129,9 +148,10 @@ impl Board {
             (new_head.get_y() + self.table_size as i16) % self.table_size as i16,
         );
 
+        let collides_with_walls = self.walls.contains(&new_head);
         let collides_with_body = self.game_table.contains(&new_head);
 
-        if collides_with_body {
+        if collides_with_body || collides_with_walls {
             self.game_table.pop_back();
             self.game_table.pop_front();
 
@@ -139,7 +159,7 @@ impl Board {
         } else if new_head == self.food {
             self.game_table.push_front(new_head);
             self.score += 1;
-            self.food = Self::find_lunch_point(self.table_size, &self.game_table);
+            self.food = Self::find_lunch_point(self.table_size, &self.game_table, &self.walls);
 
             true
         } else {
@@ -156,7 +176,7 @@ impl Board {
         }
     }
 
-    fn find_lunch_point(table_size: u16, game_table: &Table) -> Point {
+    fn find_lunch_point(table_size: u16, game_table: &Table, walls: &Table) -> Point {
         let mut rng = rand::thread_rng();
         let mut point;
         loop {
@@ -165,7 +185,7 @@ impl Board {
                 rng.gen_range(0..table_size as i16),
             );
 
-            if !game_table.contains(&point) {
+            if !game_table.contains(&point) && !walls.contains(&point) {
                 return point;
             }
         }
