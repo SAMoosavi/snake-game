@@ -31,10 +31,14 @@ impl Point {
 
     pub fn direction_of_neighbor(&self, other: &Self) -> Direction {
         match (other.x - self.x, other.y - self.y) {
-            (x, 0) if x > 0 => Direction::Down,
-            (x, 0) if x < 0 => Direction::Up,
-            (0, y) if y > 0 => Direction::Right,
-            (0, y) if y < 0 => Direction::Left,
+            (1, 0) => Direction::Down,
+            (x, 0) if x > 0 => Direction::Up,
+            (-1, 0) => Direction::Up,
+            (x, 0) if x < 0 => Direction::Down,
+            (0, 1) => Direction::Right,
+            (0, y) if y > 0 => Direction::Left,
+            (0, -1) => Direction::Left,
+            (0, y) if y < 0 => Direction::Right,
             _ => Direction::None,
         }
     }
