@@ -24,13 +24,19 @@ impl Board {
         }
 
         let game_table = Self::create_table(table_size, length);
-        let walls = LinkedList::from([
-            Point::new(10, 1),
-            Point::new(1, 1),
-            Point::new(1, 0),
-            Point::new(1, 2),
-            Point::new(2, 2),
-        ]);
+        let mut walls = LinkedList::new();
+
+        (0..=19).for_each(|i| walls.push_back(Point::new(10, i)));
+
+        (0..=9).for_each(|i| {
+            walls.push_back(Point::new(0, i));
+            walls.push_back(Point::new(19, i));
+        });
+
+        (11..=19).for_each(|i| {
+            walls.push_back(Point::new(0, i));
+            walls.push_back(Point::new(19, i));
+        });
 
         Ok(Self {
             food: Self::find_lunch_point(table_size, &game_table, &walls),
