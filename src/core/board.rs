@@ -344,10 +344,11 @@ mod test_board {
 
     #[test]
     fn bad() {
-        let a = LinkedList::from([Point::new(9, 0), Point::new(9, 19), Point::new(9, 18)]);
+        // just for debugging
+        let game_table =
+            LinkedList::from([Point::new(9, 0), Point::new(9, 19), Point::new(10, 19)]);
         let mut game = Board::new(20, 3).unwrap();
-        game.game_table = a;
-        game.get_table();
-        let b = LinkedList::from([Point::new(9, 1), Point::new(9, 0), Point::new(9, 19)]);
+        game.game_table = game_table;
+        game.print();
     }
 }
