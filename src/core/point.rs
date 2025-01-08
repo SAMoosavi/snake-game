@@ -1,6 +1,6 @@
 use super::Direction;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Point {
     x: i16,
     y: i16,

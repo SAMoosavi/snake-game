@@ -1,4 +1,4 @@
-use crate::{Board, Direction};
+use crate::{core::Game, Direction};
 use std::{io, time};
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -14,13 +14,13 @@ use ratatui::{
 use tokio::time::{sleep, Duration};
 
 struct App {
-    game: Board,
+    game: Game,
     stop: bool,
     exit: bool,
 }
 
 impl App {
-    pub fn new(game: Board) -> Self {
+    pub fn new(game: Game) -> Self {
         Self {
             game,
             stop: false,
@@ -126,7 +126,7 @@ impl Widget for &App {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn tui(game: Board) -> Result<(), std::io::Error> {
+    pub async fn tui(game: Game) -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
         let app_result = App::new(game).run(&mut terminal).await;
         ratatui::restore();
