@@ -6,16 +6,16 @@ use super::{point::Point, Board, Direction};
 type Snake = LinkedList<Point>;
 type Food = Point;
 
-pub struct Game {
-    board: Board,
+pub struct Game<'a> {
+    board: &'a Board,
     snake: Snake,
     food: Food,
     score: u16,
     direction: Direction,
 }
 
-impl Game {
-    pub fn new(board: Board, length: u16) -> Self {
+impl<'a> Game<'a> {
+    pub fn new(board: &'a Board, length: u16) -> Self {
         let snake = Self::create_snake(board.get_size(), length);
         let food = Self::find_lunch_point(&snake, &board);
 
@@ -83,7 +83,7 @@ impl Game {
     }
 }
 
-impl Game {
+impl<'a> Game<'a> {
     fn put_snake(result: &mut [Vec<String>], snake: &Snake) {
         fn get_char(before: &Direction, after: &Direction) -> String {
             match (before, after) {
@@ -162,7 +162,7 @@ impl Game {
     }
 }
 
-impl Game {
+impl<'a> Game<'a> {
     fn create_snake(table_size: u16, length: u16) -> Snake {
         let half = (table_size as i16 - 1) / 2;
         let offset = length as i16 / 2;

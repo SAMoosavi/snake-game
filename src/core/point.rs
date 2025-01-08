@@ -1,6 +1,8 @@
 use super::Direction;
 
-#[derive(PartialEq, Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Point {
     x: i16,
     y: i16,

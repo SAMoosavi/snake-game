@@ -3,6 +3,9 @@ use std::collections::LinkedList;
 
 type Table = LinkedList<Point>;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Board {
     table_size: u16,
     walls: Table,
