@@ -1,43 +1,31 @@
-use crate::{core::Game, Direction};
-use std::{io, time};
+mod game;
+
+use crate::core::Game;
+use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use game::GameTui;
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style, Stylize},
-    symbols::border,
-    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
-    DefaultTerminal, Frame,
+    DefaultTerminal,
 };
 use tokio::time::{sleep, Duration};
 
 struct App<'a> {
-    game: Game<'a>,
-    stop: bool,
+    game_tui: GameTui<'a>,
     exit: bool,
 }
 
 impl<'a> App<'a> {
     pub fn new(game: Game<'a>) -> Self {
         Self {
-            game,
-            stop: false,
+            game_tui: GameTui::new(game),
             exit: false,
         }
     }
 
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        while !self.stop && !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
-            if event::poll(time::Duration::from_millis(10))? {
-                self.handle_events()?;
-            }
-            self.stop = !self.game.walk();
-
-            sleep(Duration::from_millis(80)).await;
-        }
+        let score = self.game_tui.run(terminal).await?;
 
         sleep(Duration::from_secs(1)).await;
 
@@ -46,7 +34,7 @@ impl<'a> App<'a> {
             terminal.draw(|f| {
                 Paragraph::new(format!(
                     "Game Over!\nYour score is {}\nPress 'q' to quit.",
-                    self.game.get_score()
+                    score
                 ))
                 .block(Block::default().borders(Borders::ALL))
                 .render(f.area(), f.buffer_mut());
@@ -57,17 +45,9 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
-    }
-
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
-            KeyCode::Up => self.game.rotation(Direction::Up),
-            KeyCode::Down => self.game.rotation(Direction::Down),
-            KeyCode::Left => self.game.rotation(Direction::Left),
-            KeyCode::Right => self.game.rotation(Direction::Right),
             _ => {}
         }
     }
@@ -83,46 +63,6 @@ impl<'a> App<'a> {
     }
 }
 
-impl<'a> Widget for &App<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(vec![
-            " Your score ".into(),
-            format!("{} ", self.game.get_score()).bold().red(),
-        ]);
-
-        let instructions = Line::from(vec![
-            " Left ".into(),
-            "\u{2190}".red().bold(),
-            " Up ".into(),
-            "\u{2191}".red().bold(),
-            " Right ".into(),
-            "\u{2192}".red().bold(),
-            " Down ".into(),
-            "\u{2193}".red().bold(),
-            " Quit ".into(),
-            "Q ".red().bold(),
-        ]);
-
-        let table = self.game.get_table();
-        let text = table
-            .iter()
-            .map(|row| Line::from(row.iter().map(Span::from).collect::<Vec<_>>()))
-            .collect::<Vec<_>>();
-
-        Paragraph::new(text)
-            .block(
-                Block::bordered()
-                    .title(title.centered())
-                    .title_bottom(instructions.centered())
-                    .border_set(border::ROUNDED)
-                    .border_style(Style::default().fg(Color::Blue)),
-            )
-            .centered()
-            .bg(Color::Black)
-            .fg(Color::Green)
-            .render(area, buf);
-    }
-}
 pub struct Tui {}
 
 impl Tui {
