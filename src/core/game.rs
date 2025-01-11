@@ -243,8 +243,8 @@ mod test_game {
 
     #[test]
     fn walk() {
-        let board = Board::new(5, LinkedList::new());
-        let mut game = Game::new(board, 3);
+        let board = Board::new(5, Vec::new());
+        let mut game = Game::new(&board, 3);
         game.food = Point::new(0, 0);
 
         assert_eq!(
@@ -280,8 +280,8 @@ mod test_game {
             LinkedList::from([Point::new(2, 3), Point::new(3, 3), Point::new(3, 4)])
         );
 
-        let board = Board::new(7, LinkedList::new());
-        let mut game = Game::new(board, 5);
+        let board = Board::new(7, Vec::new());
+        let mut game = Game::new(&board, 5);
         game.food = Point::new(6, 6);
 
         game.snake = LinkedList::from([
@@ -298,8 +298,8 @@ mod test_game {
 
     #[test]
     fn walk_system_test() {
-        let board = Board::new(7, LinkedList::new());
-        let mut game = Game::new(board, 3);
+        let board = Board::new(7, Vec::new());
+        let mut game = Game::new(&board, 3);
 
         assert_eq!(
             game.snake,

@@ -1,7 +1,6 @@
 use super::point::Point;
-use std::collections::LinkedList;
 
-type Table = LinkedList<Point>;
+type Table = Vec<Point>;
 
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +29,7 @@ impl Board {
     pub fn default() -> Self {
         Self {
             table_size: 10,
-            walls: LinkedList::from([Point::new(5, 5)]),
+            walls: Vec::from([Point::new(5, 5)]),
         }
     }
 
@@ -41,30 +40,28 @@ impl Board {
     pub fn is_wall(&self, point: &Point) -> bool {
         self.walls.contains(point)
     }
+
+    pub fn add_point(&mut self, point: Point) {
+        self.walls.push(point);
+    }
+
+    pub fn remove_point(&mut self, point: &Point) {
+        self.walls.retain(|p| p != point);
+    }
 }
 
 impl<'a> IntoIterator for &'a Board {
     type Item = &'a Point;
-    type IntoIter = std::collections::linked_list::Iter<'a, Point>;
+    type IntoIter = std::slice::Iter<'a, Point>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.walls.iter()
     }
 }
 
-// Optional: Implement `IntoIterator` for owned and mutable versions as well
-impl IntoIterator for Board {
-    type Item = Point;
-    type IntoIter = std::collections::linked_list::IntoIter<Point>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.walls.into_iter()
-    }
-}
-
 impl<'a> IntoIterator for &'a mut Board {
     type Item = &'a mut Point;
-    type IntoIter = std::collections::linked_list::IterMut<'a, Point>;
+    type IntoIter = std::slice::IterMut<'a, Point>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.walls.iter_mut()
@@ -74,11 +71,10 @@ impl<'a> IntoIterator for &'a mut Board {
 #[cfg(test)]
 mod test_board {
     use super::{super::point::Point, Board};
-    use std::collections::LinkedList;
 
     #[test]
     fn is_wall() {
-        let board = Board::new(10, LinkedList::from([Point::new(5, 6), Point::new(3, 4)]));
+        let board = Board::new(10, Vec::from([Point::new(5, 6), Point::new(3, 4)]));
 
         assert!(board.is_wall(&Point::new(5, 6)));
         assert!(board.is_wall(&Point::new(3, 4)));
@@ -88,11 +84,8 @@ mod test_board {
 
     #[test]
     fn check_create() {
-        let board = Board::new(4, LinkedList::from([Point::new(-5, 7), Point::new(3, 4)]));
+        let board = Board::new(4, Vec::from([Point::new(-5, 7), Point::new(3, 4)]));
 
-        assert_eq!(
-            board.walls,
-            LinkedList::from([Point::new(3, 3), Point::new(3, 0)])
-        );
+        assert_eq!(board.walls, Vec::from([Point::new(3, 3), Point::new(3, 0)]));
     }
 }
