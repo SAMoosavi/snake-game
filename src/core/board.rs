@@ -42,11 +42,18 @@ impl Board {
         self.walls.contains(point)
     }
 
-    pub fn add_point(&mut self, point: Wall) {
-        self.walls.push(point);
+    pub fn add_wall(&mut self, point: Wall) -> Result<(), String> {
+        let valid_range = 0..self.table_size as i16;
+
+        if valid_range.contains(&point.get_x()) && valid_range.contains(&point.get_y()) {
+            self.walls.push(point);
+            Ok(())
+        } else {
+            Err("the point out of range".to_string())
+        }
     }
 
-    pub fn remove_point(&mut self, point: &Wall) {
+    pub fn remove_wall(&mut self, point: &Wall) {
         self.walls.retain(|p| p != point);
     }
 
