@@ -71,13 +71,10 @@ impl<'a> Game<'a> {
     }
 
     pub fn get_table(&self) -> Vec<Vec<String>> {
-        let len = (self.board.get_size() + 2) as usize;
-        let mut result = vec![vec![" ".to_string(); len]; len];
+        let mut result = self.board.get_table();
 
         Self::put_food(&mut result, &self.food);
         Self::put_snake(&mut result, &self.snake);
-        Self::put_walls(&mut result, &self.board);
-        Self::put_boarder(&mut result, len);
 
         result
     }
@@ -136,30 +133,10 @@ impl<'a> Game<'a> {
         }
     }
 
-    fn put_walls(result: &mut [Vec<String>], board: &Board) {
-        board.into_iter().for_each(|p| {
-            result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "█".to_string()
-        });
-    }
-
     fn put_food(result: &mut [Vec<String>], food: &Point) {
         result[(food.get_x() + 1) as usize][(food.get_y() + 1) as usize] = "●".to_string();
     }
 
-    fn put_boarder(result: &mut [Vec<String>], len: usize) {
-        result[0].fill("─".to_string());
-        result[0][0] = "┌".to_string();
-        result[0][(len - 1) as usize] = "┐".to_string();
-
-        result[(len - 1) as usize].fill("─".to_string());
-        result[(len - 1) as usize][0] = "└".to_string();
-        result[(len - 1) as usize][(len - 1) as usize] = "┘".to_string();
-
-        for row in &mut result[1..=(len - 2) as usize] {
-            row[0] = "│".to_string();
-            row[(len - 1) as usize] = "│".to_string();
-        }
-    }
 }
 
 impl<'a> Game<'a> {
