@@ -1,15 +1,14 @@
-use crate::{core::Game, Direction};
+use crate::core::{Direction, Game};
+
+use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style, Stylize},
-    symbols::border,
-    text::{Line, Span},
+    text::Line,
     widgets::{Block, Paragraph, Widget},
     DefaultTerminal, Frame,
 };
 use std::{io, time};
-
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use tokio::time::{sleep, Duration};
 
@@ -53,7 +52,7 @@ impl<'a> GameTui<'a> {
 
     fn key_event_play_mode(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('q') | KeyCode::Char('Q') => self.exit = true,
             KeyCode::Up | KeyCode::Char('k') => self.game.rotation(Direction::Up),
             KeyCode::Down | KeyCode::Char('j') => self.game.rotation(Direction::Down),
             KeyCode::Left | KeyCode::Char('h') => self.game.rotation(Direction::Left),
@@ -64,7 +63,7 @@ impl<'a> GameTui<'a> {
     }
     fn key_event_stop_mode(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('q') | KeyCode::Char('Q') => self.exit = true,
             KeyCode::Esc => self.stop = false,
             _ => {}
         }
@@ -87,41 +86,20 @@ impl<'a> GameTui<'a> {
 
 impl<'a> Widget for &GameTui<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(vec![
-            " Your score ".into(),
-            format!("{} ", self.game.get_score()).bold().red(),
-        ]);
-
-        let instructions = Line::from(vec![
-            " Left ".into(),
-            "\u{2190}".red().bold(),
-            " Up ".into(),
-            "\u{2191}".red().bold(),
-            " Right ".into(),
-            "\u{2192}".red().bold(),
-            " Down ".into(),
-            "\u{2193}".red().bold(),
-            " Quit ".into(),
-            "Q ".red().bold(),
-        ]);
+        let title = Line::from(format!("Your score {}", self.game.get_score()));
+        let instructions =
+            Line::from("Use 🠀 🠂 🠁 🠃 or h j k l to move, esc to stop/play, q/Q to quit game.");
 
         let table = self.game.get_table();
-        let text = table
-            .iter()
-            .map(|row| Line::from(row.iter().map(Span::from).collect::<Vec<_>>()))
-            .collect::<Vec<_>>();
+        let text = table.iter().map(|row| row.join("")).join("\n");
 
         Paragraph::new(text)
             .block(
-                Block::bordered()
+                Block::new()
                     .title(title.centered())
-                    .title_bottom(instructions.centered())
-                    .border_set(border::ROUNDED)
-                    .border_style(Style::default().fg(Color::Blue)),
+                    .title_bottom(instructions.centered()),
             )
             .centered()
-            .bg(Color::Black)
-            .fg(Color::Green)
             .render(area, buf);
     }
 }
