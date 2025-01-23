@@ -13,7 +13,7 @@ pub struct Boards {
 }
 
 impl Boards {
-    pub fn read(file_path: &str) -> Boards {
+    pub fn load(file_path: &str) -> Boards {
         let json_file_path = Path::new(file_path);
 
         let file = File::open(json_file_path).unwrap();
@@ -28,7 +28,11 @@ impl Boards {
         self.boards.get(name)
     }
 
-    pub fn write(file_path: &str, board: HashMap<&str, Board>) {
+    pub fn get_names(&self) -> Vec<String> {
+        self.boards.keys().cloned().collect()
+    }
+
+    pub fn save(file_path: &str, board: HashMap<&str, Board>) {
         let j = serde_json::to_string(&board).unwrap();
         let json_file_path = Path::new(file_path);
         println!("{:?}", json_file_path);
