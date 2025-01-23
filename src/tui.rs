@@ -7,7 +7,7 @@ use tokio::time::sleep;
 
 use game::GameTui;
 use ratatui::{
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::{Paragraph, Widget},
     DefaultTerminal,
 };
 use select_board::{SelectBoardTui, SelectBoardTuiResult};
@@ -50,7 +50,7 @@ impl App {
                 }
                 State::CreateBoard => todo!(),
                 State::PlayGame(board) => {
-                    let mut game_tui = GameTui::new(Game::new(&board, 3));
+                    let mut game_tui = GameTui::new(Game::new(board, 3));
                     let score = game_tui.run(terminal).await?;
                     State::GameOver(score)
                 }

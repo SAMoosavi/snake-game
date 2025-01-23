@@ -1,5 +1,6 @@
 use crate::core::{Direction, Game};
 
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
@@ -9,7 +10,6 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 use std::{io, time};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use tokio::time::{sleep, Duration};
 
 pub struct GameTui<'a> {
@@ -84,7 +84,7 @@ impl<'a> GameTui<'a> {
     }
 }
 
-impl<'a> Widget for &GameTui<'a> {
+impl Widget for &GameTui<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(format!("Your score {}", self.game.get_score()));
         let instructions =

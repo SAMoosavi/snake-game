@@ -17,7 +17,7 @@ pub struct Game<'a> {
 impl<'a> Game<'a> {
     pub fn new(board: &'a Board, length: u16) -> Self {
         let snake = Self::create_snake(board.get_size(), length);
-        let food = Self::find_lunch_point(&snake, &board);
+        let food = Self::find_lunch_point(&snake, board);
 
         Self {
             food,
@@ -59,7 +59,7 @@ impl<'a> Game<'a> {
         } else if new_head == self.food {
             self.snake.push_front(new_head);
             self.score += 1;
-            self.food = Self::find_lunch_point(&self.snake, &self.board);
+            self.food = Self::find_lunch_point(&self.snake, self.board);
 
             true
         } else {
@@ -80,7 +80,7 @@ impl<'a> Game<'a> {
     }
 }
 
-impl<'a> Game<'a> {
+impl Game<'_> {
     fn put_snake(result: &mut [Vec<String>], snake: &Snake) {
         fn get_char(before: &Direction, after: &Direction) -> String {
             match (before, after) {
@@ -136,10 +136,9 @@ impl<'a> Game<'a> {
     fn put_food(result: &mut [Vec<String>], food: &Point) {
         result[(food.get_x() + 1) as usize][(food.get_y() + 1) as usize] = "●".to_string();
     }
-
 }
 
-impl<'a> Game<'a> {
+impl Game<'_> {
     fn create_snake(table_size: u16, length: u16) -> Snake {
         let half = (table_size as i16 - 1) / 2;
         let offset = length as i16 / 2;

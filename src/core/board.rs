@@ -70,23 +70,24 @@ impl Board {
 
 impl Board {
     fn put_walls(result: &mut [Vec<String>], walls: &Walls) {
-        walls.into_iter().for_each(|p| {
+        walls.iter().for_each(|p| {
             result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "█".to_string()
         });
     }
 
     fn put_boarder(result: &mut [Vec<String>], len: usize) {
+        let last_index = len - 1;
         result[0].fill("─".to_string());
         result[0][0] = "┌".to_string();
-        result[0][(len - 1) as usize] = "┐".to_string();
+        result[0][last_index] = "┐".to_string();
 
-        result[(len - 1) as usize].fill("─".to_string());
-        result[(len - 1) as usize][0] = "└".to_string();
-        result[(len - 1) as usize][(len - 1) as usize] = "┘".to_string();
+        result[last_index].fill("─".to_string());
+        result[last_index][0] = "└".to_string();
+        result[last_index][last_index] = "┘".to_string();
 
-        for row in &mut result[1..=(len - 2) as usize] {
+        for row in &mut result[1..=(len - 2)] {
             row[0] = "│".to_string();
-            row[(len - 1) as usize] = "│".to_string();
+            row[last_index] = "│".to_string();
         }
     }
 }
