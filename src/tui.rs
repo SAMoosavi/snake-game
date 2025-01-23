@@ -1,64 +1,76 @@
 mod game;
+mod select_board;
 
-use crate::core::Game;
-use std::io;
+use crate::core::{Board, Game};
+use std::{io, time::Duration};
+use tokio::time::sleep;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use game::GameTui;
 use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
     DefaultTerminal,
 };
-use tokio::time::{sleep, Duration};
+use select_board::{SelectBoardTui, SelectBoardTuiResult};
 
-struct App<'a> {
-    game_tui: GameTui<'a>,
+enum State {
+    SelectBoard,
+    CreateBoard,
+    PlayGame(Board),
+    GameOver(u16),
+}
+
+struct App {
+    state: State,
     exit: bool,
 }
 
-impl<'a> App<'a> {
-    pub fn new(game: Game<'a>) -> Self {
+impl App {
+    pub fn new() -> Self {
         Self {
-            game_tui: GameTui::new(game),
+            state: State::SelectBoard,
             exit: false,
         }
     }
 
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let score = self.game_tui.run(terminal).await?;
+        while !self.exit {
+            self.state = match &self.state {
+                State::SelectBoard => {
+                    let mut select_board_tui =
+                        SelectBoardTui::new("/home/moosavi/Desktop/snake_game/src/a.json");
 
-        sleep(Duration::from_secs(1)).await;
+                    match select_board_tui.run(terminal)? {
+                        SelectBoardTuiResult::Board(board) => State::PlayGame(board),
+                        SelectBoardTuiResult::Exit => {
+                            self.exit = true;
+                            State::SelectBoard
+                        }
+                        SelectBoardTuiResult::CreateBoard => State::CreateBoard,
+                    }
+                }
+                State::CreateBoard => todo!(),
+                State::PlayGame(board) => {
+                    let mut game_tui = GameTui::new(Game::new(&board, 3));
+                    let score = game_tui.run(terminal).await?;
+                    State::GameOver(score)
+                }
+                State::GameOver(score) => {
+                    terminal.draw(|f| {
+                        Paragraph::new(format!("Game Over!\nYour score is {}", score))
+                            .render(f.area(), f.buffer_mut());
+                    })?;
+
+                    sleep(Duration::from_millis(1000)).await;
+
+                    self.exit = true;
+
+                    State::GameOver(*score)
+                }
+            };
+        }
 
         terminal.clear()?;
-        while !self.exit {
-            terminal.draw(|f| {
-                Paragraph::new(format!(
-                    "Game Over!\nYour score is {}\nPress 'q' to quit.",
-                    score
-                ))
-                .block(Block::default().borders(Borders::ALL))
-                .render(f.area(), f.buffer_mut());
-            })?;
-            self.handle_events()?;
-        }
 
-        Ok(())
-    }
-
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('q') => self.exit = true,
-            _ => {}
-        }
-    }
-
-    fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
-            }
-            _ => {}
-        };
         Ok(())
     }
 }
@@ -66,9 +78,9 @@ impl<'a> App<'a> {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn tui(game: Game<'_>) -> Result<(), std::io::Error> {
+    pub async fn tui() -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
-        let app_result = App::new(game).run(&mut terminal).await;
+        let app_result = App::new().run(&mut terminal).await;
         ratatui::restore();
         app_result
     }

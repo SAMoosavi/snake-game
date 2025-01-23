@@ -5,7 +5,7 @@ type Walls = Vec<Wall>;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Board {
     table_size: u16,
     walls: Walls,
