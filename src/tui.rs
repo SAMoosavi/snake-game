@@ -1,3 +1,4 @@
+mod create_board;
 mod game;
 mod select_board;
 
@@ -5,6 +6,7 @@ use crate::core::{Board, Game};
 use std::{io, time::Duration};
 use tokio::time::sleep;
 
+use create_board::CreateBoardTui;
 use game::GameTui;
 use ratatui::{
     widgets::{Paragraph, Widget},
@@ -48,7 +50,11 @@ impl App {
                         SelectBoardTuiResult::CreateBoard => State::CreateBoard,
                     }
                 }
-                State::CreateBoard => todo!(),
+                State::CreateBoard => {
+                    let mut create_board_tui = CreateBoardTui::new("/home/moosavi/Desktop/snake_game/src/a.json");
+                    create_board_tui.run(terminal)?;
+                    State::SelectBoard
+                }
                 State::PlayGame(board) => {
                     let mut game_tui = GameTui::new(Game::new(board, 3));
                     let score = game_tui.run(terminal).await?;

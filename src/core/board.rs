@@ -1,6 +1,6 @@
 use super::point::Point;
 
-type Wall = Point;
+pub type Wall = Point;
 type Walls = Vec<Wall>;
 
 use serde::{Deserialize, Serialize};
