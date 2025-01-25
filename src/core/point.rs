@@ -21,14 +21,21 @@ impl Point {
         self.y
     }
 
-    pub fn get_neighbor(&self, direction: &Direction) -> Self {
-        match direction {
-            Direction::Up => Point::new(self.x - 1, self.y),
-            Direction::Down => Point::new(self.x + 1, self.y),
-            Direction::Left => Point::new(self.x, self.y - 1),
-            Direction::Right => Point::new(self.x, self.y + 1),
-            Direction::None => todo!(),
-        }
+    pub fn get_neighbor(&self, direction: &Direction, table_size: u16) -> Self {
+        let table_size_i16 = table_size as i16;
+
+        let (new_x, new_y) = match direction {
+            Direction::Up => (self.x - 1, self.y),
+            Direction::Down => (self.x + 1, self.y),
+            Direction::Left => (self.x, self.y - 1),
+            Direction::Right => (self.x, self.y + 1),
+            Direction::None => (self.x, self.y),
+        };
+
+        Point::new(
+            new_x.rem_euclid(table_size_i16),
+            new_y.rem_euclid(table_size_i16),
+        )
     }
 
     pub fn direction_of_neighbor(&self, other: &Self) -> Direction {
@@ -52,12 +59,13 @@ mod test_point {
 
     #[test]
     fn neighbor() {
+        let table_size = 5;
         let point = Point::new(1, 1);
 
-        let down = point.get_neighbor(&Direction::Down);
-        let up = point.get_neighbor(&Direction::Up);
-        let right = point.get_neighbor(&Direction::Right);
-        let left = point.get_neighbor(&Direction::Left);
+        let down = point.get_neighbor(&Direction::Down, table_size);
+        let up = point.get_neighbor(&Direction::Up, table_size);
+        let right = point.get_neighbor(&Direction::Right, table_size);
+        let left = point.get_neighbor(&Direction::Left, table_size);
 
         assert_eq!(down, Point { x: 2, y: 1 });
         assert_eq!(up, Point { x: 0, y: 1 });

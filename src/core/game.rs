@@ -41,12 +41,7 @@ impl<'a> Game<'a> {
     pub fn walk(&mut self) -> bool {
         let head = self.snake.front().unwrap();
 
-        let mut new_head = head.get_neighbor(&self.direction);
-
-        new_head = Point::new(
-            (new_head.get_x() + self.board.get_size() as i16) % self.board.get_size() as i16,
-            (new_head.get_y() + self.board.get_size() as i16) % self.board.get_size() as i16,
-        );
+        let new_head = head.get_neighbor(&self.direction, self.board.get_size());
 
         let collides_with_walls = self.board.is_wall(&new_head);
         let collides_with_body = Self::is_snake(&self.snake, &new_head);
