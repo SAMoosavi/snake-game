@@ -53,10 +53,18 @@ impl<'a> GameTui<'a> {
     fn key_event_play_mode(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') => self.exit = true,
-            KeyCode::Up | KeyCode::Char('k') => self.game.rotation(Direction::Up),
-            KeyCode::Down | KeyCode::Char('j') => self.game.rotation(Direction::Down),
-            KeyCode::Left | KeyCode::Char('h') => self.game.rotation(Direction::Left),
-            KeyCode::Right | KeyCode::Char('l') => self.game.rotation(Direction::Right),
+            KeyCode::Up | KeyCode::Char('w') | KeyCode::Char('k') => {
+                self.game.rotation(Direction::Up)
+            }
+            KeyCode::Down | KeyCode::Char('s') | KeyCode::Char('j') => {
+                self.game.rotation(Direction::Down)
+            }
+            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('h') => {
+                self.game.rotation(Direction::Left)
+            }
+            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('l') => {
+                self.game.rotation(Direction::Right)
+            }
             KeyCode::Esc => self.stop = true,
             _ => {}
         }
