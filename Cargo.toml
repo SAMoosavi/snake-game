@@ -16,13 +16,3 @@ tokio = { version = "1.42.0", features = ["full"] }
 opt-level = 3
 codegen-units = 1
 lto = true
-
-[build]
-jobs = 4
-
-[target.'cfg(unix)']
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
-
-[target.'cfg(windows)']
-rustflags = ["-C", "link-arg=/MACHINE:X64"]
-
