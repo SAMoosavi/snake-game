@@ -32,7 +32,7 @@ pub struct CreateBoardTui {
 }
 
 impl CreateBoardTui {
-    pub fn new(file_path: &str) -> Self {
+    pub fn new() -> Self {
         Self {
             name: "".to_string(),
             board: Board::new(0, vec![]),
@@ -41,7 +41,7 @@ impl CreateBoardTui {
             finish: false,
             wall: Wall::new(0, 0),
             state: State::PutSize,
-            boards: Boards::load(file_path),
+            boards: Boards::load(),
             error: "".to_string(),
         }
     }

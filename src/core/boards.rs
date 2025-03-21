@@ -7,6 +7,8 @@ use std::{
 
 use super::Board;
 
+const JSON_FILE_PATH: &str = "./src/boards.json";
+
 #[derive(Debug)]
 pub struct Boards {
     boards: HashMap<String, Board>,
@@ -14,8 +16,8 @@ pub struct Boards {
 }
 
 impl Boards {
-    pub fn load(file_path: &str) -> Boards {
-        let json_file_path = Path::new(file_path);
+    pub fn load() -> Boards {
+        let json_file_path = Path::new(JSON_FILE_PATH);
 
         let file = File::open(json_file_path).unwrap();
 
