@@ -67,11 +67,9 @@ impl App {
                             .render(f.area(), f.buffer_mut());
                     })?;
 
-                    sleep(Duration::from_millis(1000)).await;
+                    sleep(Duration::from_millis(3000)).await;
 
-                    self.exit = true;
-
-                    State::GameOver(*score)
+                    State::SelectBoard
                 }
             };
         }
