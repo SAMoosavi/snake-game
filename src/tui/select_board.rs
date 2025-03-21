@@ -32,8 +32,8 @@ pub struct SelectBoardTui {
 }
 
 impl SelectBoardTui {
-    pub fn new(path: &str) -> Self {
-        let boards = Boards::load(path);
+    pub fn new() -> Self {
+        let boards = Boards::load();
         let board_names = boards.get_names();
 
         let mut state = ListState::default();

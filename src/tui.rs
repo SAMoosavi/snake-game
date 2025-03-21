@@ -38,8 +38,7 @@ impl App {
         while !self.exit {
             self.state = match &self.state {
                 State::SelectBoard => {
-                    let mut select_board_tui =
-                        SelectBoardTui::new("/home/moosavi/Desktop/snake_game/src/boards.json");
+                    let mut select_board_tui = SelectBoardTui::new();
 
                     match select_board_tui.run(terminal)? {
                         SelectBoardTuiResult::Board(board) => State::PlayGame(board),
@@ -51,8 +50,7 @@ impl App {
                     }
                 }
                 State::CreateBoard => {
-                    let mut create_board_tui =
-                        CreateBoardTui::new("/home/moosavi/Desktop/snake_game/src/boards.json");
+                    let mut create_board_tui = CreateBoardTui::new();
                     create_board_tui.run(terminal)?;
                     State::SelectBoard
                 }
