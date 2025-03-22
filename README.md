@@ -4,10 +4,7 @@ A simple Snake game implemented in Rust using TUI (Text-based User Interface). T
 
 ## Features
 - Classic Snake gameplay
-- Terminal-based UI using `ratatui`
-- Real-time keyboard input handling
-- Smooth game loop using `tokio`
-- Score tracking
+- Create your board
 
 ## Play Game
 
@@ -36,9 +33,6 @@ This project uses the following Rust crates:
 
 ## Contributing
 Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## License
-This project is licensed under the MIT License.
 
 ---
 Enjoy the game! 🎮
