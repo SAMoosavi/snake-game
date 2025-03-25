@@ -17,7 +17,7 @@ use ratatui::{
 use std::io;
 
 pub enum SelectBoardTuiResult {
-    Board(Board),
+    Board(String, Board),
     Exit,
     CreateBoard,
 }
@@ -31,9 +31,15 @@ pub struct SelectBoardTui {
     state: ListState,
 }
 
+impl Default for SelectBoardTui {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SelectBoardTui {
     pub fn new() -> Self {
-        let boards = Boards::load();
+        let boards = Boards::new();
         let board_names = boards.get_names();
 
         let mut state = ListState::default();
@@ -61,7 +67,8 @@ impl SelectBoardTui {
         } else if self.create_board {
             SelectBoardTuiResult::CreateBoard
         } else {
-            SelectBoardTuiResult::Board(self.selected_board())
+            let (name, board) = self.selected_board();
+            SelectBoardTuiResult::Board(name, board)
         };
         Ok(select_board_tui_result)
     }
@@ -98,9 +105,11 @@ impl SelectBoardTui {
         self.state.select_previous();
     }
 
-    fn selected_board(&self) -> Board {
+    fn selected_board(&self) -> (String, Board) {
         let index = self.state.selected().unwrap();
-        self.boards.get(&self.board_names[index]).unwrap().clone()
+        let board_name = &self.board_names[index];
+        let border = self.boards.get(board_name).unwrap().clone();
+        (board_name.clone(), border)
     }
 
     fn render_header(area: Rect, buf: &mut Buffer) {
@@ -139,6 +148,7 @@ impl SelectBoardTui {
     fn render_selected_item(&self, area: Rect, buf: &mut Buffer) {
         let selected_board = self
             .selected_board()
+            .1
             .get_table()
             .iter()
             .map(|row| row.join(""))

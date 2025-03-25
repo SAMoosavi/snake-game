@@ -1,17 +1,16 @@
 mod create_board;
 mod game;
+mod game_over_tui;
 mod select_board;
 
 use crate::core::{Board, Game};
-use std::{io, time::Duration};
-use tokio::time::sleep;
+
+use std::io;
 
 use create_board::CreateBoardTui;
 use game::GameTui;
-use ratatui::{
-    widgets::{Paragraph, Widget},
-    DefaultTerminal,
-};
+use game_over_tui::GameOverTui;
+use ratatui::DefaultTerminal;
 use select_board::{SelectBoardTui, SelectBoardTuiResult};
 
 enum State {
@@ -24,6 +23,7 @@ enum State {
 struct App {
     state: State,
     exit: bool,
+    board_name: String,
 }
 
 impl App {
@@ -31,6 +31,7 @@ impl App {
         Self {
             state: State::SelectBoard,
             exit: false,
+            board_name: "".to_string(),
         }
     }
 
@@ -41,7 +42,10 @@ impl App {
                     let mut select_board_tui = SelectBoardTui::new();
 
                     match select_board_tui.run(terminal)? {
-                        SelectBoardTuiResult::Board(board) => State::PlayGame(board),
+                        SelectBoardTuiResult::Board(board_name, board) => {
+                            self.board_name = board_name;
+                            State::PlayGame(board)
+                        }
                         SelectBoardTuiResult::Exit => {
                             self.exit = true;
                             State::SelectBoard
@@ -60,12 +64,8 @@ impl App {
                     State::GameOver(score)
                 }
                 State::GameOver(score) => {
-                    terminal.draw(|f| {
-                        Paragraph::new(format!("Game Over!\nYour score is {}", score))
-                            .render(f.area(), f.buffer_mut());
-                    })?;
-
-                    sleep(Duration::from_millis(3000)).await;
+                    let game_over_tui = GameOverTui::new(self.board_name.clone(), *score);
+                    game_over_tui.run(terminal).await?;
 
                     State::SelectBoard
                 }
@@ -81,7 +81,7 @@ impl App {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn tui() -> Result<(), std::io::Error> {
+    pub async fn render() -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
         let app_result = App::new().run(&mut terminal).await;
         ratatui::restore();

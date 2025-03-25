@@ -5,7 +5,7 @@ use tui::Tui;
 
 #[tokio::main]
 async fn main() {
-    match Tui::tui().await {
+    match Tui::render().await {
         Ok(_) => {}
         Err(e) => println!("{e}"),
     }
