@@ -1,6 +1,7 @@
 mod create_board;
 mod game;
-mod game_over_tui;
+mod game_over;
+mod scoreboard;
 mod select_board;
 
 use crate::core::{Board, Game};
@@ -9,8 +10,9 @@ use std::io;
 
 use create_board::CreateBoardTui;
 use game::GameTui;
-use game_over_tui::GameOverTui;
+use game_over::GameOverTui;
 use ratatui::DefaultTerminal;
+use scoreboard::ScoreboardTui;
 use select_board::{SelectBoardTui, SelectBoardTuiResult};
 
 enum State {
@@ -18,6 +20,7 @@ enum State {
     CreateBoard,
     PlayGame(Board),
     GameOver(u16),
+    Scoreboard,
 }
 
 struct App {
@@ -51,6 +54,7 @@ impl App {
                             State::SelectBoard
                         }
                         SelectBoardTuiResult::CreateBoard => State::CreateBoard,
+                        SelectBoardTuiResult::ScoreBoards => State::Scoreboard,
                     }
                 }
                 State::CreateBoard => {
@@ -67,6 +71,11 @@ impl App {
                     let game_over_tui = GameOverTui::new(self.board_name.clone(), *score);
                     game_over_tui.run(terminal).await?;
 
+                    State::SelectBoard
+                }
+                State::Scoreboard => {
+                    let mut scoreboard = ScoreboardTui::new();
+                    scoreboard.run(terminal)?;
                     State::SelectBoard
                 }
             };

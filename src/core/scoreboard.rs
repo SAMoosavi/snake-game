@@ -34,6 +34,10 @@ impl Scoreboard {
             s
         })
     }
+
+    pub fn get_names(&self) -> Vec<String> {
+        self.scoreboard.keys().cloned().collect()
+    }
 }
 
 impl Drop for Scoreboard {

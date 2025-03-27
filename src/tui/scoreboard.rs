@@ -1,5 +1,6 @@
-use crate::core::{Board, Boards};
+use std::io;
 
+use crate::core::Scoreboard;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
 use ratatui::{
@@ -14,69 +15,42 @@ use ratatui::{
     },
     DefaultTerminal, Frame,
 };
-use std::io;
 
-pub enum SelectBoardTuiResult {
-    Board(String, Board),
-    Exit,
-    CreateBoard,
-    ScoreBoards,
-}
-
-pub struct SelectBoardTui {
+pub struct ScoreboardTui {
+    scoreboard: Scoreboard,
     exit: bool,
-    selected: bool,
-    create_board: bool,
-    show_scoreboards: bool,
-    boards: Boards,
-    board_names: Vec<String>,
     state: ListState,
+    board_names: Vec<String>,
 }
 
-impl Default for SelectBoardTui {
+impl Default for ScoreboardTui {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SelectBoardTui {
+impl ScoreboardTui {
     pub fn new() -> Self {
-        let boards = Boards::new();
-        let board_names = boards.get_names();
+        let scoreboard = Scoreboard::new();
+        let board_names = scoreboard.get_names();
 
         let mut state = ListState::default();
         state.select_first();
 
         Self {
-            exit: false,
-            selected: false,
-            create_board: false,
-            show_scoreboards: false,
             state,
-            boards,
+            scoreboard,
             board_names,
+            exit: false,
         }
     }
 
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<SelectBoardTuiResult> {
-        while !(self.exit || self.selected || self.create_board || self.show_scoreboards) {
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-
             self.handle_events()?;
         }
-
-        let select_board_tui_result = if self.exit {
-            SelectBoardTuiResult::Exit
-        } else if self.create_board {
-            SelectBoardTuiResult::CreateBoard
-        } else if self.show_scoreboards {
-            SelectBoardTuiResult::ScoreBoards
-        } else {
-            let (name, board) = self.selected_board();
-            SelectBoardTuiResult::Board(name, board)
-        };
-
-        Ok(select_board_tui_result)
+        Ok(())
     }
 
     fn draw(&mut self, frame: &mut Frame) {
@@ -85,10 +59,7 @@ impl SelectBoardTui {
 
     fn key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Enter => self.selected = true,
             KeyCode::Char('q') => self.exit = true,
-            KeyCode::Char('c') => self.create_board = true,
-            KeyCode::Char('s') => self.show_scoreboards = true,
             KeyCode::Char('j') | KeyCode::Down => self.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
             _ => {}
@@ -113,22 +84,21 @@ impl SelectBoardTui {
         self.state.select_previous();
     }
 
-    fn selected_board(&self) -> (String, Board) {
+    fn selected_board(&self) -> Vec<u16> {
         let index = self.state.selected().unwrap();
         let board_name = &self.board_names[index];
-        let border = self.boards.get(board_name).unwrap().clone();
-        (board_name.clone(), border)
+        self.scoreboard.get(board_name).unwrap().clone()
     }
 
     fn render_header(area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Select Board")
+        Paragraph::new("Scoreboard")
             .bold()
             .centered()
             .render(area, buf);
     }
 
     fn render_footer(area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Use ↓↑ to move, c/C to go create board, s/S to go show scoreboards, ⮡ to go play selected board, q/Q to quit game.")
+        Paragraph::new("Use ↓↑ to move, q/Q to back.")
             .centered()
             .render(area, buf);
     }
@@ -155,12 +125,11 @@ impl SelectBoardTui {
     }
 
     fn render_selected_item(&self, area: Rect, buf: &mut Buffer) {
-        let selected_board = self
+        let selected_scoreboard = self
             .selected_board()
-            .1
-            .get_table()
             .iter()
-            .map(|row| row.join(""))
+            .enumerate()
+            .map(|(index, score)| format!("{}: {}", index, score))
             .join("\n");
 
         let block = Block::new()
@@ -168,14 +137,14 @@ impl SelectBoardTui {
             .borders(Borders::ALL)
             .border_set(border::ROUNDED);
 
-        Paragraph::new(selected_board)
+        Paragraph::new(selected_scoreboard)
             .block(block)
             .alignment(Alignment::Center)
             .render(area, buf);
     }
 }
 
-impl Widget for &mut SelectBoardTui {
+impl Widget for &mut ScoreboardTui {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [header_area, main_area, footer_area] = Layout::vertical([
             Constraint::Length(2),
@@ -188,8 +157,8 @@ impl Widget for &mut SelectBoardTui {
             Layout::horizontal([Constraint::Percentage(30), Constraint::Percentage(70)])
                 .areas(main_area);
 
-        SelectBoardTui::render_header(header_area, buf);
-        SelectBoardTui::render_footer(footer_area, buf);
+        ScoreboardTui::render_header(header_area, buf);
+        ScoreboardTui::render_footer(footer_area, buf);
         self.render_list_of_name(list_area, buf);
         self.render_selected_item(item_area, buf);
     }
