@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Board {
+    name: String,
     table_size: u16,
     walls: Walls,
 }
 
 impl Board {
-    pub fn new(table_size: u16, walls: Walls) -> Self {
+    pub fn new(name: String, table_size: u16, walls: Walls) -> Self {
         let table_size_i16 = table_size as i16;
         let walls = walls
             .iter()
@@ -24,11 +25,24 @@ impl Board {
             })
             .collect();
 
-        Self { table_size, walls }
+        Self {
+            name,
+            table_size,
+            walls,
+        }
+    }
+
+    pub fn copy_with_new_name(&self, name: String) -> Self {
+        Self {
+            name,
+            table_size: self.table_size,
+            walls: self.walls.clone(),
+        }
     }
 
     pub fn default() -> Self {
         Self {
+            name: "test board".to_string(),
             table_size: 10,
             walls: Vec::from([Wall::new(5, 5)]),
         }
@@ -65,6 +79,10 @@ impl Board {
         Self::put_boarder(&mut result, len);
 
         result
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -116,7 +134,11 @@ mod test_board {
 
     #[test]
     fn is_wall() {
-        let board = Board::new(10, Vec::from([Wall::new(5, 6), Wall::new(3, 4)]));
+        let board = Board::new(
+            "test".to_string(),
+            10,
+            Vec::from([Wall::new(5, 6), Wall::new(3, 4)]),
+        );
 
         assert!(board.is_wall(&Wall::new(5, 6)));
         assert!(board.is_wall(&Wall::new(3, 4)));
@@ -126,7 +148,11 @@ mod test_board {
 
     #[test]
     fn check_create() {
-        let board = Board::new(4, Vec::from([Wall::new(-5, 7), Wall::new(3, 4)]));
+        let board = Board::new(
+            "test".to_string(),
+            4,
+            Vec::from([Wall::new(-5, 7), Wall::new(3, 4)]),
+        );
 
         assert_eq!(board.walls, Vec::from([Wall::new(3, 3), Wall::new(3, 0)]));
     }

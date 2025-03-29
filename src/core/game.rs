@@ -214,7 +214,7 @@ mod test_game {
 
     #[test]
     fn walk() {
-        let board = Board::new(5, Vec::new());
+        let board = Board::new("test".to_string(), 5, Vec::new());
         let mut game = Game::new(&board, 3);
         game.food = Point::new(0, 0);
 
@@ -251,7 +251,7 @@ mod test_game {
             LinkedList::from([Point::new(2, 3), Point::new(3, 3), Point::new(3, 4)])
         );
 
-        let board = Board::new(7, Vec::new());
+        let board = Board::new("test".to_string(), 7, Vec::new());
         let mut game = Game::new(&board, 5);
         game.food = Point::new(6, 6);
 
@@ -269,7 +269,7 @@ mod test_game {
 
     #[test]
     fn walk_system_test() {
-        let board = Board::new(7, Vec::new());
+        let board = Board::new("test".to_string(), 7, Vec::new());
         let mut game = Game::new(&board, 3);
 
         assert_eq!(

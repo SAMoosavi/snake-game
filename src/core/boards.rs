@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::File,
     io::{BufReader, Write},
 };
@@ -10,7 +9,7 @@ const JSON_FILE_PATH: &str = "./src/boards.json";
 
 #[derive(Debug)]
 pub struct Boards {
-    boards: HashMap<String, Board>,
+    boards: Vec<Board>,
 }
 
 impl Boards {
@@ -18,26 +17,29 @@ impl Boards {
         let file = File::open(JSON_FILE_PATH).unwrap();
 
         let reader = BufReader::new(file);
-        let boards: HashMap<String, Board> = serde_json::from_reader(reader).unwrap();
+        let boards: Vec<Board> = serde_json::from_reader(reader).unwrap();
 
         Self { boards }
     }
 
     pub fn add(&mut self, name: String, board: Board) -> Result<(), String> {
-        if self.boards.contains_key(&name) {
+        if self.boards.iter().any(|board| board.get_name() == &name) {
             return Err(format!("Board '{}' already exists", name));
         }
 
-        self.boards.insert(name, board);
+        self.boards.push(board);
         Ok(())
     }
 
-    pub fn get(&self, name: &str) -> Option<&Board> {
-        self.boards.get(name)
+    pub fn get(&self, index: usize) -> Option<&Board> {
+        self.boards.get(index)
     }
 
     pub fn get_names(&self) -> Vec<String> {
-        self.boards.keys().cloned().collect()
+        self.boards
+            .iter()
+            .map(|board| board.get_name().to_string())
+            .collect()
     }
 }
 

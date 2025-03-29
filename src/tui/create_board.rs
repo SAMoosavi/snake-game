@@ -41,7 +41,7 @@ impl CreateBoardTui {
     pub fn new() -> Self {
         Self {
             name: "".to_string(),
-            board: Board::new(0, vec![]),
+            board: Board::new("".to_string(), 0, vec![]),
             size: 0,
             exit: false,
             finish: false,
@@ -87,7 +87,7 @@ impl CreateBoardTui {
             }
             KeyCode::Backspace => self.size /= 10,
             KeyCode::Enter => {
-                self.board = Board::new(self.size, vec![]);
+                self.board = Board::new("".to_string(), self.size, vec![]);
                 self.state = State::Wall;
             }
 
@@ -102,7 +102,6 @@ impl CreateBoardTui {
                 self.name.pop();
             }
             KeyCode::Enter => self.store(),
-
             _ => {}
         }
     }
@@ -145,6 +144,7 @@ impl CreateBoardTui {
     }
 
     fn store(&mut self) {
+        self.board = self.board.copy_with_new_name(self.name.clone());
         match self.boards.add(self.name.clone(), self.board.clone()) {
             Ok(_) => self.finish = true,
             Err(e) => self.error = e,
