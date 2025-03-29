@@ -17,7 +17,7 @@ use ratatui::{
 use std::io;
 
 pub enum SelectBoardTuiResult {
-    Board(String, Board),
+    Board(Board),
     Exit,
     CreateBoard,
     ScoreBoards,
@@ -72,8 +72,7 @@ impl SelectBoardTui {
         } else if self.show_scoreboards {
             SelectBoardTuiResult::ScoreBoards
         } else {
-            let (name, board) = self.selected_board();
-            SelectBoardTuiResult::Board(name, board)
+            SelectBoardTuiResult::Board(self.selected_board())
         };
 
         Ok(select_board_tui_result)
@@ -113,11 +112,10 @@ impl SelectBoardTui {
         self.state.select_previous();
     }
 
-    fn selected_board(&self) -> (String, Board) {
+    fn selected_board(&self) -> Board {
         let index = self.state.selected().unwrap();
-        let board_name = &self.board_names[index];
-        let border = self.boards.get(board_name).unwrap().clone();
-        (board_name.clone(), border)
+        let border = self.boards.get(index).unwrap().clone();
+        border
     }
 
     fn render_header(area: Rect, buf: &mut Buffer) {
@@ -157,7 +155,6 @@ impl SelectBoardTui {
     fn render_selected_item(&self, area: Rect, buf: &mut Buffer) {
         let selected_board = self
             .selected_board()
-            .1
             .get_table()
             .iter()
             .map(|row| row.join(""))
