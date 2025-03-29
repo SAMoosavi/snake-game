@@ -1,17 +1,18 @@
 mod create_board;
 mod game;
+mod game_over;
+mod scoreboard;
 mod select_board;
 
 use crate::core::{Board, Game};
-use std::{io, time::Duration};
-use tokio::time::sleep;
+
+use std::io;
 
 use create_board::CreateBoardTui;
 use game::GameTui;
-use ratatui::{
-    widgets::{Paragraph, Widget},
-    DefaultTerminal,
-};
+use game_over::GameOverTui;
+use ratatui::DefaultTerminal;
+use scoreboard::ScoreboardTui;
 use select_board::{SelectBoardTui, SelectBoardTuiResult};
 
 enum State {
@@ -19,11 +20,13 @@ enum State {
     CreateBoard,
     PlayGame(Board),
     GameOver(u16),
+    Scoreboard,
 }
 
 struct App {
     state: State,
     exit: bool,
+    board_name: String,
 }
 
 impl App {
@@ -31,6 +34,7 @@ impl App {
         Self {
             state: State::SelectBoard,
             exit: false,
+            board_name: "".to_string(),
         }
     }
 
@@ -41,12 +45,16 @@ impl App {
                     let mut select_board_tui = SelectBoardTui::new();
 
                     match select_board_tui.run(terminal)? {
-                        SelectBoardTuiResult::Board(board) => State::PlayGame(board),
+                        SelectBoardTuiResult::Board(board_name, board) => {
+                            self.board_name = board_name;
+                            State::PlayGame(board)
+                        }
                         SelectBoardTuiResult::Exit => {
                             self.exit = true;
                             State::SelectBoard
                         }
                         SelectBoardTuiResult::CreateBoard => State::CreateBoard,
+                        SelectBoardTuiResult::ScoreBoards => State::Scoreboard,
                     }
                 }
                 State::CreateBoard => {
@@ -60,13 +68,14 @@ impl App {
                     State::GameOver(score)
                 }
                 State::GameOver(score) => {
-                    terminal.draw(|f| {
-                        Paragraph::new(format!("Game Over!\nYour score is {}", score))
-                            .render(f.area(), f.buffer_mut());
-                    })?;
+                    let game_over_tui = GameOverTui::new(self.board_name.clone(), *score);
+                    game_over_tui.run(terminal).await?;
 
-                    sleep(Duration::from_millis(3000)).await;
-
+                    State::SelectBoard
+                }
+                State::Scoreboard => {
+                    let mut scoreboard = ScoreboardTui::new();
+                    scoreboard.run(terminal)?;
                     State::SelectBoard
                 }
             };
@@ -81,7 +90,7 @@ impl App {
 pub struct Tui {}
 
 impl Tui {
-    pub async fn tui() -> Result<(), std::io::Error> {
+    pub async fn render() -> Result<(), std::io::Error> {
         let mut terminal = ratatui::init();
         let app_result = App::new().run(&mut terminal).await;
         ratatui::restore();

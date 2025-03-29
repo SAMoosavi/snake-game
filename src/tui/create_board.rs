@@ -15,9 +15,9 @@ use ratatui::{
 use crate::core::{Board, Boards, Direction, Wall};
 
 enum State {
-    PutSize,
-    PutName,
-    PutWall,
+    Size,
+    Name,
+    Wall,
 }
 pub struct CreateBoardTui {
     name: String,
@@ -31,6 +31,12 @@ pub struct CreateBoardTui {
     error: String,
 }
 
+impl Default for CreateBoardTui {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CreateBoardTui {
     pub fn new() -> Self {
         Self {
@@ -40,8 +46,8 @@ impl CreateBoardTui {
             exit: false,
             finish: false,
             wall: Wall::new(0, 0),
-            state: State::PutSize,
-            boards: Boards::load(),
+            state: State::Size,
+            boards: Boards::new(),
             error: "".to_string(),
         }
     }
@@ -68,7 +74,7 @@ impl CreateBoardTui {
             KeyCode::Char('h') | KeyCode::Left => self.select_left(),
             KeyCode::Char('l') | KeyCode::Right => self.select_right(),
             KeyCode::Char(' ') => self.toggle_wall(),
-            KeyCode::Enter => self.state = State::PutName,
+            KeyCode::Enter => self.state = State::Name,
             _ => {}
         }
     }
@@ -82,7 +88,7 @@ impl CreateBoardTui {
             KeyCode::Backspace => self.size /= 10,
             KeyCode::Enter => {
                 self.board = Board::new(self.size, vec![]);
-                self.state = State::PutWall;
+                self.state = State::Wall;
             }
 
             _ => {}
@@ -104,9 +110,9 @@ impl CreateBoardTui {
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => match self.state {
-                State::PutWall => self.key_event_put_wall(key_event),
-                State::PutSize => self.key_event_put_size(key_event),
-                State::PutName => self.key_event_put_name(key_event),
+                State::Wall => self.key_event_put_wall(key_event),
+                State::Size => self.key_event_put_size(key_event),
+                State::Name => self.key_event_put_name(key_event),
             },
             _ => {}
         };
@@ -140,10 +146,7 @@ impl CreateBoardTui {
 
     fn store(&mut self) {
         match self.boards.add(self.name.clone(), self.board.clone()) {
-            Ok(_) => {
-                self.boards.save();
-                self.finish = true;
-            }
+            Ok(_) => self.finish = true,
             Err(e) => self.error = e,
         }
     }
@@ -210,9 +213,9 @@ impl CreateBoardTui {
 impl Widget for &mut CreateBoardTui {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self.state {
-            State::PutWall => self.render_put_wall(area, buf),
-            State::PutSize => self.render_put_size(area, buf),
-            State::PutName => self.render_put_name(area, buf),
+            State::Wall => self.render_put_wall(area, buf),
+            State::Size => self.render_put_size(area, buf),
+            State::Name => self.render_put_name(area, buf),
         }
     }
 }
