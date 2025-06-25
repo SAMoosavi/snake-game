@@ -157,11 +157,11 @@ impl CreateBoardTui {
         let mut selected_board = self.board.get_table();
         selected_board[(self.wall.get_x() + 1) as usize][(self.wall.get_y() + 1) as usize] =
             if selected_board[(self.wall.get_x() + 1) as usize][(self.wall.get_y() + 1) as usize]
-                == " "
+                == "  "
             {
-                "■".to_string()
+                "■■".to_string()
             } else {
-                "▀".to_string()
+                "▀▀".to_string()
             };
         let selected_board = selected_board.iter().map(|row| row.join("")).join("\n");
 

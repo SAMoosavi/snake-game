@@ -129,7 +129,7 @@ impl ScoreboardTui {
             .selected_board()
             .iter()
             .enumerate()
-            .map(|(index, score)| format!("{}: {}", index, score))
+            .map(|(index, score)| format!("{}: {}", index + 1, score))
             .join("\n");
 
         let block = Block::new()
