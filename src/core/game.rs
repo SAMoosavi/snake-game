@@ -79,30 +79,34 @@ impl Game<'_> {
     fn put_snake(result: &mut [Vec<String>], snake: &Snake) {
         fn get_char(before: &Direction, after: &Direction) -> String {
             match (before, after) {
-                (&Direction::Down, &Direction::Right) => "┌".to_string(),
-                (&Direction::Right, &Direction::Down) => "┌".to_string(),
-                (&Direction::Down, &Direction::Left) => "┐".to_string(),
-                (&Direction::Left, &Direction::Down) => "┐".to_string(),
-                (&Direction::Up, &Direction::Right) => "└".to_string(),
-                (&Direction::Right, &Direction::Up) => "└".to_string(),
-                (&Direction::Up, &Direction::Left) => "┘".to_string(),
-                (&Direction::Left, &Direction::Up) => "┘".to_string(),
-                (&Direction::None, &Direction::Left) => "─".to_string(),
-                (&Direction::Left, &Direction::None) => "─".to_string(),
-                (&Direction::None, &Direction::Right) => "─".to_string(),
-                (&Direction::Right, &Direction::None) => "─".to_string(),
-                (&Direction::Left, &Direction::Left) => "─".to_string(),
-                (&Direction::Right, &Direction::Right) => "─".to_string(),
-                (&Direction::Left, &Direction::Right) => "─".to_string(),
-                (&Direction::Right, &Direction::Left) => "─".to_string(),
-                (&Direction::Down, &Direction::Up) => "│".to_string(),
-                (&Direction::Up, &Direction::Down) => "│".to_string(),
-                (&Direction::None, &Direction::Down) => "│".to_string(),
-                (&Direction::Down, &Direction::None) => "│".to_string(),
-                (&Direction::None, &Direction::Up) => "│".to_string(),
-                (&Direction::Up, &Direction::None) => "│".to_string(),
-                (&Direction::Up, &Direction::Up) => "│".to_string(),
-                (&Direction::Down, &Direction::Down) => "│".to_string(),
+                (&Direction::Down, &Direction::Right) | (&Direction::Right, &Direction::Down) => {
+                    " ┌".to_string()
+                }
+                (&Direction::Down, &Direction::Left) | (&Direction::Left, &Direction::Down) => {
+                    "─┐".to_string()
+                }
+                (&Direction::Up, &Direction::Right) | (&Direction::Right, &Direction::Up) => {
+                    " └".to_string()
+                }
+                (&Direction::Up, &Direction::Left) | (&Direction::Left, &Direction::Up) => {
+                    "─┘".to_string()
+                }
+                (&Direction::None, &Direction::Left)
+                | (&Direction::Left, &Direction::None)
+                | (&Direction::None, &Direction::Right)
+                | (&Direction::Right, &Direction::None)
+                | (&Direction::Left, &Direction::Left)
+                | (&Direction::Right, &Direction::Right)
+                | (&Direction::Left, &Direction::Right)
+                | (&Direction::Right, &Direction::Left) => "──".to_string(),
+                (&Direction::Down, &Direction::Up)
+                | (&Direction::Up, &Direction::Down)
+                | (&Direction::None, &Direction::Down)
+                | (&Direction::Down, &Direction::None)
+                | (&Direction::None, &Direction::Up)
+                | (&Direction::Up, &Direction::None)
+                | (&Direction::Up, &Direction::Up)
+                | (&Direction::Down, &Direction::Down) => " │".to_string(),
                 _ => {
                     panic!("{:?} {:?}", before, after)
                 }
@@ -129,7 +133,7 @@ impl Game<'_> {
     }
 
     fn put_food(result: &mut [Vec<String>], food: &Point) {
-        result[(food.get_x() + 1) as usize][(food.get_y() + 1) as usize] = "●".to_string();
+        result[(food.get_x() + 1) as usize][(food.get_y() + 1) as usize] = " ●".to_string();
     }
 }
 

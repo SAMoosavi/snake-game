@@ -23,7 +23,7 @@ impl Boards {
     }
 
     pub fn add(&mut self, name: String, board: Board) -> Result<(), String> {
-        if self.boards.iter().any(|board| board.get_name() == &name) {
+        if self.boards.iter().any(|board| board.get_name() == name) {
             return Err(format!("Board '{}' already exists", name));
         }
 

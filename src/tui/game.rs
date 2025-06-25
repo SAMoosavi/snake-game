@@ -94,7 +94,7 @@ impl<'a> GameTui<'a> {
 
 impl Widget for &GameTui<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(format!("Your score {}", self.game.get_score()));
+        let title = Line::from(format!("Your score: {}", self.game.get_score()));
         let instructions =
             Line::from("Use 🠀 🠂 🠁 🠃 or h j k l to move, esc to stop/play, q/Q to quit game.");
 

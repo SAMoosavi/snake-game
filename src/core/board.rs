@@ -73,7 +73,7 @@ impl Board {
 
     pub fn get_table(&self) -> Vec<Vec<String>> {
         let len = (self.get_size() + 2) as usize;
-        let mut result = vec![vec![" ".to_string(); len]; len];
+        let mut result = vec![vec!["  ".to_string(); len]; len];
 
         Self::put_walls(&mut result, &self.walls);
         Self::put_boarder(&mut result, len);
@@ -89,17 +89,17 @@ impl Board {
 impl Board {
     fn put_walls(result: &mut [Vec<String>], walls: &Walls) {
         walls.iter().for_each(|p| {
-            result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "█".to_string()
+            result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "██".to_string()
         });
     }
 
     fn put_boarder(result: &mut [Vec<String>], len: usize) {
         let last_index = len - 1;
-        result[0].fill("─".to_string());
+        result[0].fill("──".to_string());
         result[0][0] = "┌".to_string();
         result[0][last_index] = "┐".to_string();
 
-        result[last_index].fill("─".to_string());
+        result[last_index].fill("──".to_string());
         result[last_index][0] = "└".to_string();
         result[last_index][last_index] = "┘".to_string();
 
