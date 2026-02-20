@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 use std::collections::LinkedList;
 
 use super::{point::Point, Board, Direction};
@@ -142,7 +142,7 @@ impl Game<'_> {
         let half = (table_size as i16 - 1) / 2;
         let offset = length as i16 / 2;
 
-        let range = if length % 2 == 0 {
+        let range = if length.is_multiple_of(2) {
             -offset..=offset - 1
         } else {
             -offset..=offset
@@ -153,12 +153,12 @@ impl Game<'_> {
 
     fn find_lunch_point(snake: &Snake, board: &Board) -> Food {
         let table_size = board.get_size();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut food = Self::get_head(snake);
         while Self::is_snake(snake, &food) || board.is_wall(&food) {
             food = Food::new(
-                rng.gen_range(0..table_size as i16),
-                rng.gen_range(0..table_size as i16),
+                rng.random_range(0..table_size as i16),
+                rng.random_range(0..table_size as i16),
             );
         }
         food

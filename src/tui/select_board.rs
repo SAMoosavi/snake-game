@@ -114,8 +114,7 @@ impl SelectBoardTui {
 
     fn selected_board(&self) -> Board {
         let index = self.state.selected().unwrap();
-        let border = self.boards.get(index).unwrap().clone();
-        border
+        self.boards.get(index).unwrap().clone()
     }
 
     fn render_header(area: Rect, buf: &mut Buffer) {
