@@ -1,21 +1,31 @@
-use rand::Rng;
-use std::collections::LinkedList;
+use rand::RngExt;
+use std::collections::VecDeque;
 
-use super::{point::Point, Board, Direction};
+use super::{Board, BoardCell, Direction, point::Point};
 
-type Snake = LinkedList<Point>;
+type Snake = VecDeque<Point>;
 type Food = Point;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameCell {
+    Empty,
+    Wall,
+    SnakeBody,
+    SnakeHead,
+    Food,
+}
 
 pub struct Game<'a> {
     board: &'a Board,
     snake: Snake,
     food: Food,
     score: u16,
+    score_per_food: u16,
     direction: Direction,
 }
 
 impl<'a> Game<'a> {
-    pub fn new(board: &'a Board, length: u16) -> Self {
+    pub fn new(board: &'a Board, length: u16, score_per_food: u16) -> Self {
         let snake = Self::create_snake(board.get_size(), length);
         let food = Self::find_lunch_point(&snake, board);
 
@@ -23,6 +33,7 @@ impl<'a> Game<'a> {
             food,
             snake,
             score: 0,
+            score_per_food: score_per_food.max(1),
             direction: Direction::Right,
             board,
         }
@@ -40,7 +51,6 @@ impl<'a> Game<'a> {
 
     pub fn walk(&mut self) -> bool {
         let head = self.snake.front().unwrap();
-
         let new_head = head.get_neighbor(&self.direction, self.board.get_size());
 
         let collides_with_walls = self.board.is_wall(&new_head);
@@ -53,7 +63,7 @@ impl<'a> Game<'a> {
             false
         } else if new_head == self.food {
             self.snake.push_front(new_head);
-            self.score += 1;
+            self.score = self.score.saturating_add(self.score_per_food);
             self.food = Self::find_lunch_point(&self.snake, self.board);
 
             true
@@ -65,75 +75,32 @@ impl<'a> Game<'a> {
         }
     }
 
-    pub fn get_table(&self) -> Vec<Vec<String>> {
-        let mut result = self.board.get_table();
+    pub fn get_board(&self) -> Vec<Vec<GameCell>> {
+        let mut result: Vec<Vec<GameCell>> = self
+            .board
+            .get_board()
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|cell| match cell {
+                        BoardCell::Empty => GameCell::Empty,
+                        BoardCell::Wall => GameCell::Wall,
+                    })
+                    .collect()
+            })
+            .collect();
 
-        Self::put_food(&mut result, &self.food);
-        Self::put_snake(&mut result, &self.snake);
+        result[self.food.get_x() as usize][self.food.get_y() as usize] = GameCell::Food;
+
+        if let Some(head) = self.snake.front() {
+            result[head.get_x() as usize][head.get_y() as usize] = GameCell::SnakeHead;
+        }
+
+        self.snake.iter().skip(1).for_each(|segment| {
+            result[segment.get_x() as usize][segment.get_y() as usize] = GameCell::SnakeBody;
+        });
 
         result
-    }
-}
-
-impl Game<'_> {
-    fn put_snake(result: &mut [Vec<String>], snake: &Snake) {
-        fn get_char(before: &Direction, after: &Direction) -> String {
-            match (before, after) {
-                (&Direction::Down, &Direction::Right) | (&Direction::Right, &Direction::Down) => {
-                    " ┌".to_string()
-                }
-                (&Direction::Down, &Direction::Left) | (&Direction::Left, &Direction::Down) => {
-                    "─┐".to_string()
-                }
-                (&Direction::Up, &Direction::Right) | (&Direction::Right, &Direction::Up) => {
-                    " └".to_string()
-                }
-                (&Direction::Up, &Direction::Left) | (&Direction::Left, &Direction::Up) => {
-                    "─┘".to_string()
-                }
-                (&Direction::None, &Direction::Left)
-                | (&Direction::Left, &Direction::None)
-                | (&Direction::None, &Direction::Right)
-                | (&Direction::Right, &Direction::None)
-                | (&Direction::Left, &Direction::Left)
-                | (&Direction::Right, &Direction::Right)
-                | (&Direction::Left, &Direction::Right)
-                | (&Direction::Right, &Direction::Left) => "──".to_string(),
-                (&Direction::Down, &Direction::Up)
-                | (&Direction::Up, &Direction::Down)
-                | (&Direction::None, &Direction::Down)
-                | (&Direction::Down, &Direction::None)
-                | (&Direction::None, &Direction::Up)
-                | (&Direction::Up, &Direction::None)
-                | (&Direction::Up, &Direction::Up)
-                | (&Direction::Down, &Direction::Down) => " │".to_string(),
-                _ => {
-                    panic!("{:?} {:?}", before, after)
-                }
-            }
-        }
-
-        let mut iter = snake.iter();
-        if let Some(first) = iter.next() {
-            let mut prev_direction = Direction::None;
-            let mut current = first;
-
-            for next in iter {
-                let char_to_set = get_char(&prev_direction, &current.direction_of_neighbor(next));
-                result[(current.get_x() + 1) as usize][(current.get_y() + 1) as usize] =
-                    char_to_set;
-
-                prev_direction = next.direction_of_neighbor(current);
-                current = next;
-            }
-
-            result[(current.get_x() + 1) as usize][(current.get_y() + 1) as usize] =
-                get_char(&prev_direction, &Direction::None);
-        }
-    }
-
-    fn put_food(result: &mut [Vec<String>], food: &Point) {
-        result[(food.get_x() + 1) as usize][(food.get_y() + 1) as usize] = " ●".to_string();
     }
 }
 
@@ -142,7 +109,7 @@ impl Game<'_> {
         let half = (table_size as i16 - 1) / 2;
         let offset = length as i16 / 2;
 
-        let range = if length % 2 == 0 {
+        let range = if length.is_multiple_of(2) {
             -offset..=offset - 1
         } else {
             -offset..=offset
@@ -153,19 +120,19 @@ impl Game<'_> {
 
     fn find_lunch_point(snake: &Snake, board: &Board) -> Food {
         let table_size = board.get_size();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut food = Self::get_head(snake);
         while Self::is_snake(snake, &food) || board.is_wall(&food) {
             food = Food::new(
-                rng.gen_range(0..table_size as i16),
-                rng.gen_range(0..table_size as i16),
+                rng.random_range(0..table_size as i16),
+                rng.random_range(0..table_size as i16),
             );
         }
         food
     }
 
     fn get_head(snake: &Snake) -> Point {
-        (*snake.front().unwrap()).clone()
+        snake.front().unwrap().clone()
     }
 
     fn is_snake(snake: &Snake, point: &Point) -> bool {
@@ -175,28 +142,28 @@ impl Game<'_> {
 
 #[cfg(test)]
 mod test_game {
-    use std::collections::LinkedList;
+    use std::collections::VecDeque;
 
-    use crate::core::{point::Point, Board, Direction, Game};
+    use crate::core::{Board, Direction, Game, point::Point};
 
     #[test]
     fn check_create_table() {
         let odd_n_odd_len = Game::create_snake(7, 3);
         assert_eq!(
             odd_n_odd_len,
-            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+            VecDeque::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
         );
 
         let even_n_odd_len = Game::create_snake(8, 3);
         assert_eq!(
             even_n_odd_len,
-            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+            VecDeque::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
         );
 
         let odd_n_even_len = Game::create_snake(7, 4);
         assert_eq!(
             odd_n_even_len,
-            LinkedList::from([
+            VecDeque::from([
                 Point::new(3, 4),
                 Point::new(3, 3),
                 Point::new(3, 2),
@@ -207,7 +174,7 @@ mod test_game {
         let even_n_even_len = Game::create_snake(8, 4);
         assert_eq!(
             even_n_even_len,
-            LinkedList::from([
+            VecDeque::from([
                 Point::new(3, 4),
                 Point::new(3, 3),
                 Point::new(3, 2),
@@ -219,24 +186,24 @@ mod test_game {
     #[test]
     fn walk() {
         let board = Board::new("test".to_string(), 5, Vec::new());
-        let mut game = Game::new(&board, 3);
+        let mut game = Game::new(&board, 3, 1);
         game.food = Point::new(0, 0);
 
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(2, 3), Point::new(2, 2), Point::new(2, 1)])
+            VecDeque::from([Point::new(2, 3), Point::new(2, 2), Point::new(2, 1)])
         );
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(2, 4), Point::new(2, 3), Point::new(2, 2)])
+            VecDeque::from([Point::new(2, 4), Point::new(2, 3), Point::new(2, 2)])
         );
         game.rotation(Direction::Down);
 
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(3, 4), Point::new(2, 4), Point::new(2, 3)])
+            VecDeque::from([Point::new(3, 4), Point::new(2, 4), Point::new(2, 3)])
         );
 
         game.rotation(Direction::Left);
@@ -244,7 +211,7 @@ mod test_game {
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(3, 3), Point::new(3, 4), Point::new(2, 4)])
+            VecDeque::from([Point::new(3, 3), Point::new(3, 4), Point::new(2, 4)])
         );
 
         game.rotation(Direction::Up);
@@ -252,14 +219,14 @@ mod test_game {
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(2, 3), Point::new(3, 3), Point::new(3, 4)])
+            VecDeque::from([Point::new(2, 3), Point::new(3, 3), Point::new(3, 4)])
         );
 
         let board = Board::new("test".to_string(), 7, Vec::new());
-        let mut game = Game::new(&board, 5);
+        let mut game = Game::new(&board, 5, 1);
         game.food = Point::new(6, 6);
 
-        game.snake = LinkedList::from([
+        game.snake = VecDeque::from([
             Point::new(1, 1),
             Point::new(2, 1),
             Point::new(2, 0),
@@ -274,11 +241,11 @@ mod test_game {
     #[test]
     fn walk_system_test() {
         let board = Board::new("test".to_string(), 7, Vec::new());
-        let mut game = Game::new(&board, 3);
+        let mut game = Game::new(&board, 3, 1);
 
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
+            VecDeque::from([Point::new(3, 4), Point::new(3, 3), Point::new(3, 2)])
         );
 
         game.food = Point::new(4, 5);
@@ -287,7 +254,7 @@ mod test_game {
 
         assert_eq!(
             game.snake,
-            LinkedList::from([Point::new(3, 5), Point::new(3, 4), Point::new(3, 3)])
+            VecDeque::from([Point::new(3, 5), Point::new(3, 4), Point::new(3, 3)])
         );
 
         game.rotation(Direction::Down);
@@ -297,7 +264,7 @@ mod test_game {
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([
+            VecDeque::from([
                 Point::new(4, 5),
                 Point::new(3, 5),
                 Point::new(3, 4),
@@ -305,20 +272,22 @@ mod test_game {
             ])
         );
 
-        assert!(![
-            Point::new(4, 5),
-            Point::new(3, 5),
-            Point::new(3, 4),
-            Point::new(3, 3)
-        ]
-        .contains(&game.food));
+        assert!(
+            ![
+                Point::new(4, 5),
+                Point::new(3, 5),
+                Point::new(3, 4),
+                Point::new(3, 3)
+            ]
+            .contains(&game.food)
+        );
 
         game.food = Point::new(0, 0);
 
         assert!(game.walk());
         assert_eq!(
             game.snake,
-            LinkedList::from([
+            VecDeque::from([
                 Point::new(5, 5),
                 Point::new(4, 5),
                 Point::new(3, 5),
@@ -327,5 +296,15 @@ mod test_game {
         );
 
         assert!(game.walk());
+    }
+
+    #[test]
+    fn score_with_multiplier() {
+        let board = Board::new("test".to_string(), 5, Vec::new());
+        let mut game = Game::new(&board, 3, 3);
+
+        game.food = Point::new(2, 4);
+        assert!(game.walk());
+        assert_eq!(game.get_score(), 3);
     }
 }

@@ -1,10 +1,11 @@
+mod board_view;
 mod create_board;
 mod game;
 mod game_over;
 mod scoreboard;
 mod select_board;
 
-use crate::core::{Board, Game};
+use crate::core::{Board, Game, GameSpeed};
 
 use std::io;
 
@@ -18,7 +19,7 @@ use select_board::{SelectBoardTui, SelectBoardTuiResult};
 enum State {
     SelectBoard,
     CreateBoard,
-    PlayGame(Board),
+    PlayGame(Board, GameSpeed),
     GameOver(u16, String),
     Scoreboard,
 }
@@ -43,7 +44,7 @@ impl App {
                     let mut select_board_tui = SelectBoardTui::new();
 
                     match select_board_tui.run(terminal)? {
-                        SelectBoardTuiResult::Board(board) => State::PlayGame(board),
+                        SelectBoardTuiResult::Board(board, speed) => State::PlayGame(board, speed),
                         SelectBoardTuiResult::Exit => {
                             self.exit = true;
                             State::SelectBoard
@@ -57,8 +58,9 @@ impl App {
                     create_board_tui.run(terminal)?;
                     State::SelectBoard
                 }
-                State::PlayGame(board) => {
-                    let mut game_tui = GameTui::new(Game::new(board, 3));
+                State::PlayGame(board, speed) => {
+                    let mut game_tui =
+                        GameTui::new(Game::new(board, 3, speed.score_multiplier()), *speed);
                     let score = game_tui.run(terminal).await?;
                     State::GameOver(score, board.get_name().to_string())
                 }

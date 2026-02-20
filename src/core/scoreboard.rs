@@ -38,6 +38,10 @@ impl Scoreboard {
     pub fn get_names(&self) -> Vec<String> {
         self.scoreboard.keys().cloned().collect()
     }
+
+    pub fn remove_board(&mut self, board_name: &str) -> Option<Vec<u16>> {
+        self.scoreboard.remove(board_name)
+    }
 }
 
 impl Drop for Scoreboard {
