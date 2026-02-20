@@ -41,6 +41,14 @@ impl Boards {
             .map(|board| board.get_name().to_string())
             .collect()
     }
+
+    pub fn remove(&mut self, index: usize) -> Option<Board> {
+        if index < self.boards.len() {
+            Some(self.boards.remove(index))
+        } else {
+            None
+        }
+    }
 }
 
 impl Drop for Boards {

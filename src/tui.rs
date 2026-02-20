@@ -1,3 +1,4 @@
+mod board_view;
 mod create_board;
 mod game;
 mod game_over;

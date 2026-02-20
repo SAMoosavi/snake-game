@@ -5,6 +5,12 @@ type Walls = Vec<Wall>;
 
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoardCell {
+    Empty,
+    Wall,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Board {
     name: String,
@@ -71,42 +77,22 @@ impl Board {
         self.walls.retain(|p| p != point);
     }
 
-    pub fn get_table(&self) -> Vec<Vec<String>> {
-        let len = (self.get_size() + 2) as usize;
-        let mut result = vec![vec!["  ".to_string(); len]; len];
+    pub fn get_board(&self) -> Vec<Vec<BoardCell>> {
+        let len = self.get_size() as usize;
+        let mut result = vec![vec![BoardCell::Empty; len]; len];
 
-        Self::put_walls(&mut result, &self.walls);
-        Self::put_boarder(&mut result, len);
-
+        self.walls.iter().for_each(|wall| {
+            result[wall.get_x() as usize][wall.get_y() as usize] = BoardCell::Wall;
+        });
         result
     }
 
     pub fn get_name(&self) -> &str {
         &self.name
     }
-}
 
-impl Board {
-    fn put_walls(result: &mut [Vec<String>], walls: &Walls) {
-        walls.iter().for_each(|p| {
-            result[(p.get_x() + 1) as usize][(p.get_y() + 1) as usize] = "██".to_string()
-        });
-    }
-
-    fn put_boarder(result: &mut [Vec<String>], len: usize) {
-        let last_index = len - 1;
-        result[0].fill("──".to_string());
-        result[0][0] = "┌".to_string();
-        result[0][last_index] = "┐".to_string();
-
-        result[last_index].fill("──".to_string());
-        result[last_index][0] = "└".to_string();
-        result[last_index][last_index] = "┘".to_string();
-
-        for row in &mut result[1..=(len - 2)] {
-            row[0] = "│".to_string();
-            row[last_index] = "│".to_string();
-        }
+    pub fn get_walls(&self) -> &[Wall] {
+        &self.walls
     }
 }
 
