@@ -1,5 +1,5 @@
 use crate::{
-    core::{Board, BoardCell, Boards, Scoreboard},
+    core::{Board, BoardCell, Boards, GameSpeed, Scoreboard},
     tui::board_view::{
         EMPTY_STYLE, board_rect, center_rect, fill_rect, fit_cell_width, paint_cell,
     },
@@ -20,7 +20,7 @@ use ratatui::{
 use std::io;
 
 pub enum SelectBoardTuiResult {
-    Board(Board),
+    Board(Board, GameSpeed),
     Exit,
     CreateBoard,
     ScoreBoards,
@@ -35,6 +35,7 @@ pub struct SelectBoardTui {
     boards: Boards,
     board_names: Vec<String>,
     state: ListState,
+    speed: GameSpeed,
 }
 
 impl Default for SelectBoardTui {
@@ -62,6 +63,7 @@ impl SelectBoardTui {
             state,
             boards,
             board_names,
+            speed: GameSpeed::default(),
         }
     }
 
@@ -78,7 +80,7 @@ impl SelectBoardTui {
         } else if self.show_scoreboards {
             SelectBoardTuiResult::ScoreBoards
         } else if let Some(board) = self.selected_board() {
-            SelectBoardTuiResult::Board(board)
+            SelectBoardTuiResult::Board(board, self.speed)
         } else {
             SelectBoardTuiResult::Exit
         };
@@ -110,6 +112,8 @@ impl SelectBoardTui {
                     self.confirm_remove = true;
                 }
             }
+            KeyCode::Left | KeyCode::Char('h') => self.speed = self.speed.slower(),
+            KeyCode::Right | KeyCode::Char('l') => self.speed = self.speed.faster(),
             KeyCode::Char('j') | KeyCode::Down => self.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
             _ => {}
@@ -178,16 +182,20 @@ impl SelectBoardTui {
         self.confirm_remove = false;
     }
 
-    fn render_header(area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Select Board")
-            .bold()
-            .centered()
-            .render(area, buf);
+    fn render_header(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new(format!(
+            "Select Board | Speed: {} (x{})",
+            self.speed.label(),
+            self.speed.score_multiplier()
+        ))
+        .bold()
+        .centered()
+        .render(area, buf);
     }
 
     fn render_footer(area: Rect, buf: &mut Buffer) {
         Paragraph::new(
-            "Arrow keys / J K: move  Enter: play  R: remove  C: create  S: scores  Q: quit",
+            "Arrow keys / J K: move  Arrow left/right or H/L: speed  Enter: play  R: remove  C: create  S: scores  Q: quit",
         )
         .centered()
         .render(area, buf);
@@ -318,7 +326,7 @@ impl Widget for &mut SelectBoardTui {
             Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
                 .areas(main_area);
 
-        SelectBoardTui::render_header(header_area, buf);
+        self.render_header(header_area, buf);
         SelectBoardTui::render_footer(footer_area, buf);
         self.render_list_of_name(list_area, buf);
         self.render_selected_item(item_area, buf);

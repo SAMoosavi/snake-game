@@ -20,11 +20,12 @@ pub struct Game<'a> {
     snake: Snake,
     food: Food,
     score: u16,
+    score_per_food: u16,
     direction: Direction,
 }
 
 impl<'a> Game<'a> {
-    pub fn new(board: &'a Board, length: u16) -> Self {
+    pub fn new(board: &'a Board, length: u16, score_per_food: u16) -> Self {
         let snake = Self::create_snake(board.get_size(), length);
         let food = Self::find_lunch_point(&snake, board);
 
@@ -32,6 +33,7 @@ impl<'a> Game<'a> {
             food,
             snake,
             score: 0,
+            score_per_food: score_per_food.max(1),
             direction: Direction::Right,
             board,
         }
@@ -61,7 +63,7 @@ impl<'a> Game<'a> {
             false
         } else if new_head == self.food {
             self.snake.push_front(new_head);
-            self.score += 1;
+            self.score = self.score.saturating_add(self.score_per_food);
             self.food = Self::find_lunch_point(&self.snake, self.board);
 
             true
@@ -184,7 +186,7 @@ mod test_game {
     #[test]
     fn walk() {
         let board = Board::new("test".to_string(), 5, Vec::new());
-        let mut game = Game::new(&board, 3);
+        let mut game = Game::new(&board, 3, 1);
         game.food = Point::new(0, 0);
 
         assert_eq!(
@@ -221,7 +223,7 @@ mod test_game {
         );
 
         let board = Board::new("test".to_string(), 7, Vec::new());
-        let mut game = Game::new(&board, 5);
+        let mut game = Game::new(&board, 5, 1);
         game.food = Point::new(6, 6);
 
         game.snake = VecDeque::from([
@@ -239,7 +241,7 @@ mod test_game {
     #[test]
     fn walk_system_test() {
         let board = Board::new("test".to_string(), 7, Vec::new());
-        let mut game = Game::new(&board, 3);
+        let mut game = Game::new(&board, 3, 1);
 
         assert_eq!(
             game.snake,
@@ -294,5 +296,15 @@ mod test_game {
         );
 
         assert!(game.walk());
+    }
+
+    #[test]
+    fn score_with_multiplier() {
+        let board = Board::new("test".to_string(), 5, Vec::new());
+        let mut game = Game::new(&board, 3, 3);
+
+        game.food = Point::new(2, 4);
+        assert!(game.walk());
+        assert_eq!(game.get_score(), 3);
     }
 }

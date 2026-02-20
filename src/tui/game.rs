@@ -1,5 +1,5 @@
 use crate::{
-    core::{Direction, Game, GameCell},
+    core::{Direction, Game, GameCell, GameSpeed},
     tui::board_view::{
         EMPTY_STYLE, board_rect, center_rect, fill_rect, fit_cell_width, paint_cell,
     },
@@ -19,14 +19,18 @@ use tokio::time::{Duration, sleep};
 
 pub struct GameTui<'a> {
     game: Game<'a>,
+    speed: GameSpeed,
+    tick_duration: Duration,
     stop: bool,
     exit: bool,
 }
 
 impl<'a> GameTui<'a> {
-    pub fn new(game: Game<'a>) -> Self {
+    pub fn new(game: Game<'a>, speed: GameSpeed) -> Self {
         Self {
             game,
+            speed,
+            tick_duration: Duration::from_millis(speed.tick_millis()),
             stop: false,
             exit: false,
         }
@@ -41,7 +45,7 @@ impl<'a> GameTui<'a> {
                 self.handle_events()?;
             }
 
-            sleep(Duration::from_millis(80)).await;
+            sleep(self.tick_duration).await;
 
             while self.stop && !self.exit {
                 self.handle_events()?;
@@ -103,15 +107,19 @@ impl<'a> GameTui<'a> {
         let board_block = Block::new()
             .title(
                 Line::from(format!(
-                    " Arena  Score: {}  State: {} ",
+                    " Arena  Score: {}  Speed: {}  State: {} ",
                     self.game.get_score(),
+                    self.speed.label(),
                     status
                 ))
                 .bold(),
             )
             .title_bottom(
-                Line::from("Arrow keys / WASD / HJKL: move   Esc: pause/resume   Q: quit")
-                    .centered(),
+                Line::from(format!(
+                    "Arrow keys / WASD / HJKL: move   Esc: pause/resume   Q: quit   +{} points/food",
+                    self.speed.score_multiplier()
+                ))
+                .centered(),
             )
             .borders(Borders::ALL)
             .border_style(Style::new().fg(Color::Rgb(70, 85, 105)));
